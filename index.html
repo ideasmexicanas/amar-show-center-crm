@@ -1846,11 +1846,26 @@
       renderVista(vista);
     };
 
+    const matchFilter = canal => {
+      if (!S.activeFilter || S.activeFilter === 'all') return true;
+      const c = String(canal || '').toLowerCase().trim();
+      const f = S.activeFilter.toLowerCase().trim();
+      return c === f || c.includes(f);
+    };
+
     window.filtrarCanal = (canal, btn) => {
       S.activeFilter = canal;
-      document.querySelectorAll('.seg-pill-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      renderDashboard();
+      document.querySelectorAll('.seg-pill-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === canal);
+      });
+      renderVista(S.activeView);
+      const nombresCanal = {
+        all: 'Todos los canales',
+        whatsapp: 'WhatsApp',
+        instagram: 'Instagram',
+        facebook: 'Facebook'
+      };
+      toast(`Filtrando: ${nombresCanal[canal] || canal}`);
     };
 
     // 4. CARGA DE DATOS & REALTIME
@@ -1924,29 +1939,36 @@
       });
       $('kpi-llamadas-hoy').textContent = callsToday.length || 102;
 
-      // Feed reciente
-      if (S.prospectos.length > 0) {
-        const feedEl = $('dash-feed-list');
-        feedEl.innerHTML = S.prospectos.slice(0, 5).map(p => {
-          const ini = (p.nombre || 'P').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-          const canalTag = p.canal_origen === 'whatsapp' ? '💬 WhatsApp' : p.canal_origen === 'instagram' ? '📸 Instagram' : p.canal_origen === 'facebook' ? '📘 Facebook' : '👤 CRM';
-          return `
-            <div class="feed-item" onclick="window.abrirFichaProspecto('${p.id}')">
-              <div class="feed-user-row">
-                <div class="feed-user-meta">
-                  <div class="feed-avatar">${ini}</div>
-                  <span class="feed-name">${p.nombre || 'Prospecto sin nombre'}</span>
-                  <span class="role-pill" style="background:#ECFDF5;color:#059669;">${p.tipo_evento || 'Evento'}</span>
+      // Feed reciente filtrado por red social
+      const feedProspectos = S.prospectos.filter(p => matchFilter(p.canal_origen));
+      const feedEl = $('dash-feed-list');
+      if (feedEl) {
+        if (feedProspectos.length > 0) {
+          feedEl.innerHTML = feedProspectos.slice(0, 5).map(p => {
+            const ini = (p.nombre || 'P').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+            const c = String(p.canal_origen || '').toLowerCase();
+            const canalTag = c.includes('whats') ? '💬 WhatsApp' : c.includes('insta') ? '📸 Instagram' : c.includes('face') ? '📘 Facebook' : '👤 CRM';
+            return `
+              <div class="feed-item" onclick="window.abrirFichaProspecto('${p.id}')">
+                <div class="feed-user-row">
+                  <div class="feed-user-meta">
+                    <div class="feed-avatar">${ini}</div>
+                    <span class="feed-name">${p.nombre || 'Prospecto sin nombre'}</span>
+                    <span class="role-pill" style="background:#ECFDF5;color:#059669;">${p.tipo_evento || 'Evento'}</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">${p.prioridad || 'MEDIA'}</span>
                 </div>
-                <span style="font-size:11px;color:var(--muted);">${p.prioridad || 'MEDIA'}</span>
+                <div class="feed-snippet">${p.observaciones || p.resumen_conversacion || 'Interesado en cotización de evento en Amar Show Center.'}</div>
+                <div class="feed-actions-row">
+                  <span>${canalTag}</span> · <span>👥 ${p.invitados_estimados || 0} pax</span> · <span>⚡ ${p.estado_comercial}</span>
+                </div>
               </div>
-              <div class="feed-snippet">${p.observaciones || p.resumen_conversacion || 'Interesado en cotización de evento en Amar Show Center.'}</div>
-              <div class="feed-actions-row">
-                <span>${canalTag}</span> · <span>👥 ${p.invitados_estimados || 0} pax</span> · <span>⚡ ${p.estado_comercial}</span>
-              </div>
-            </div>
-          `;
-        }).join('');
+            `;
+          }).join('');
+        } else {
+          const canalTxt = S.activeFilter !== 'all' ? ` para ${S.activeFilter}` : '';
+          feedEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:12.5px;">No hay prospectos recientes${canalTxt}.</div>`;
+        }
       }
 
       // Badge de atención
@@ -1976,6 +1998,11 @@
 
         const dayCitas = S.citas.filter(c => {
           if (fEj !== 'todos' && c.ejecutivo_id !== fEj) return false;
+          if (S.activeFilter && S.activeFilter !== 'all') {
+            const p = S.prospectos.find(x => x.id === c.prospecto_id);
+            const canalCita = p?.canal_origen || c.canal_origen;
+            if (!matchFilter(canalCita)) return false;
+          }
           const cDate = new Date(c.inicio).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
           return cDate === cellDateStr && c.estado !== 'cancelada';
         });
@@ -2028,24 +2055,37 @@
     };
 
     const renderKanban = () => {
+      const filtered = S.prospectos.filter(p => matchFilter(p.canal_origen));
       ESTADOS.forEach(st => {
         const bodyEl = $(`k-body-${st.id}`);
         if (!bodyEl) return;
-        const items = S.prospectos.filter(p => p.estado_comercial === st.id);
+        const items = filtered.filter(p => p.estado_comercial === st.id);
         $(`k-count-${st.id}`).textContent = items.length;
 
-        bodyEl.innerHTML = items.map(p => `
-          <div class="kanban-card-allinone" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${p.id}')" onclick="window.abrirFichaProspecto('${p.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-              <b style="font-size:13px;color:var(--ink);">${p.nombre || 'Prospecto'}</b>
-              <span class="role-pill" style="background:#EEF5FF;color:#1668E3;">${p.canal_origen || 'CRM'}</span>
+        bodyEl.innerHTML = items.map(p => {
+          const c = String(p.canal_origen || 'crm').toLowerCase();
+          const badgeStyle = c.includes('whats') 
+            ? 'background:#ECFDF5;color:#059669;' 
+            : c.includes('insta') 
+              ? 'background:#FDF2F8;color:#C026D3;' 
+              : c.includes('face') 
+                ? 'background:#EEF5FF;color:#1668E3;' 
+                : 'background:#F3F4F6;color:#4B5563;';
+          const canalLabel = c.includes('whats') ? 'WhatsApp' : c.includes('insta') ? 'Instagram' : c.includes('face') ? 'Facebook' : (p.canal_origen || 'CRM');
+
+          return `
+            <div class="kanban-card-allinone" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${p.id}')" onclick="window.abrirFichaProspecto('${p.id}')">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <b style="font-size:13px;color:var(--ink);">${p.nombre || 'Prospecto'}</b>
+                <span class="role-pill" style="${badgeStyle}">${canalLabel}</span>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">
+                ${p.tipo_evento ? `<span>🎪 ${p.tipo_evento}</span>` : ''}
+                ${p.invitados_estimados ? ` · <span>👥 ${p.invitados_estimados} pax</span>` : ''}
+              </div>
             </div>
-            <div style="font-size:11.5px;color:var(--muted);">
-              ${p.tipo_evento ? `<span>🎪 ${p.tipo_evento}</span>` : ''}
-              ${p.invitados_estimados ? ` · <span>👥 ${p.invitados_estimados} pax</span>` : ''}
-            </div>
-          </div>
-        `).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">Sin prospectos</div>`;
+          `;
+        }).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">Sin prospectos${S.activeFilter !== 'all' ? ' en ' + (S.activeFilter === 'whatsapp' ? 'WhatsApp' : S.activeFilter === 'instagram' ? 'Instagram' : 'Facebook') : ''}</div>`;
       });
     };
 
@@ -2080,13 +2120,16 @@
 
     const renderReservaciones = () => {
       const container = $('reservaciones-allinone-container');
-      if (S.reservaciones.length === 0) {
-        container.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">No hay reservaciones registradas para el Jueves Pozolero.</div>`;
+      const filteredReservaciones = S.reservaciones.filter(r => matchFilter(r.canal_origen));
+
+      if (filteredReservaciones.length === 0) {
+        const canalTxt = S.activeFilter !== 'all' ? ` para ${S.activeFilter === 'whatsapp' ? 'WhatsApp' : S.activeFilter === 'instagram' ? 'Instagram' : 'Facebook'}` : '';
+        container.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">No hay reservaciones registradas${canalTxt} para el Jueves Pozolero.</div>`;
         return;
       }
 
       const grouped = {};
-      S.reservaciones.forEach(r => {
+      filteredReservaciones.forEach(r => {
         grouped[r.fecha] = grouped[r.fecha] || [];
         grouped[r.fecha].push(r);
       });
@@ -2173,9 +2216,10 @@
     // 9. REQUIEREN ATENCIÓN
     const renderAtencion = () => {
       const listEl = $('atencion-allinone-list');
-      const urgent = S.prospectos.filter(p => p.requiere_atencion || p.estado_comercial === 'PENDIENTE_DE_SEGUIMIENTO');
+      const urgent = S.prospectos.filter(p => (p.requiere_atencion || p.estado_comercial === 'PENDIENTE_DE_SEGUIMIENTO') && matchFilter(p.canal_origen));
       if (urgent.length === 0) {
-        listEl.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">🎉 No hay prospectos pendientes de atención humana en este momento.</div>`;
+        const canalTxt = S.activeFilter !== 'all' ? ` en ${S.activeFilter === 'whatsapp' ? 'WhatsApp' : S.activeFilter === 'instagram' ? 'Instagram' : 'Facebook'}` : '';
+        listEl.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">🎉 No hay prospectos pendientes de atención humana${canalTxt} en este momento.</div>`;
         return;
       }
 
