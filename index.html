@@ -1581,11 +1581,12 @@
         <p style="font-size:12.5px;color:var(--muted);">Usa las siguientes etiquetas dinámicas. El sistema las reemplazará automáticamente con los datos del prospecto y la cita:</p>
         
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[NombreProspecto]')">+ [NombreProspecto]</button>
-          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[FechaCita]')">+ [FechaCita]</button>
-          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[HoraCita]')">+ [HoraCita]</button>
-          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[Ejecutivo]')">+ [Ejecutivo]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[NombreCliente]')">+ [NombreCliente]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[FechaEvento]')">+ [FechaEvento]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[HoraEvento]')">+ [HoraEvento]</button>
           <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[TipoEvento]')">+ [TipoEvento]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[Invitados]')">+ [Invitados]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[Ejecutivo]')">+ [Ejecutivo]</button>
         </div>
 
         <div class="form-grp">
@@ -1654,11 +1655,12 @@
         </div>
         <div class="form-row">
           <div class="form-grp">
-            <label>Segmento de Destinatarios</label>
+            <label>Segmento de Clientes / Audiencia</label>
             <select id="ncm-segmento" class="form-ctrl" onchange="window.actualizarConteoDestinatarios()">
-              <option value="todos">Todos los prospectos activos</option>
-              <option value="bodas">Interesados en Bodas y XV Años</option>
-              <option value="pozole">Comensales de Jueves Pozolero</option>
+              <option value="todos">Todos los clientes y prospectos activos</option>
+              <option value="restaurante">Comensales de Restaurante & Jueves Pozolero</option>
+              <option value="sociales">Interesados en Eventos Sociales (Bodas, XV Años & Graduaciones)</option>
+              <option value="deportivos">Aficionados a Eventos Deportivos & Shows en Vivo</option>
               <option value="calificados">Prospectos Calificados y en Negociación</option>
             </select>
           </div>
@@ -1738,55 +1740,63 @@
       { id: 'PERDIDO', label: 'Perdido', color: '#EF4444' }
     ];
 
-    // CAMPAÑAS POR DEFECTO PARA AMAR SHOW CENTER
+    // CAMPAÑAS OFICIALES PARA AMAR SHOW CENTER (RESTAURANTE, EVENTO SOCIAL Y DEPORTIVO)
     const DEFAULT_CAMPAIGNS = {
       confirmation: {
         active: true,
-        title: "Confirmación de Cita / Llamada",
-        description: "Se envía automáticamente en cuanto el prospecto o el agente agenda una llamada.",
+        title: "Confirmación de Cita / Reservación",
+        description: "Se envía inmediatamente al agendar una llamada comercial, visita al recinto o reservación en restaurante.",
         channel: "WhatsApp / SMS",
         icon: "✅",
-        message: "¡Hola [NombreProspecto]! Tu llamada de asesoría para tu evento en Amar Show Center ha sido confirmada para el [FechaCita] a las [HoraCita] con nuestro ejecutivo [Ejecutivo]. ¡Te llamaremos puntualmente!"
+        message: "¡Hola [NombreCliente]! Tu cita con Amar Show Center Acapulco ha sido confirmada para el [FechaEvento] a las [HoraEvento] con tu asesor [Ejecutivo].\n\n🎪 Interés: [TipoEvento]\n👥 Estimado: [Invitados] personas\n\nEstaremos listos para mostrarte nuestras instalaciones, terrazas frente al mar y opciones de menú o montaje. ¡Te esperamos!"
       },
       reminder_24h: {
         active: true,
         title: "Recordatorio 24 Horas",
-        description: "Se envía un día antes de la llamada para asegurar asistencia y confirmar horario.",
+        description: "Se envía un día antes de la cita o reservación para asegurar asistencia y confirmar horario.",
         channel: "WhatsApp / SMS",
         icon: "⏰",
-        message: "Hola [NombreProspecto], te recordamos que mañana a las [HoraCita] tienes tu llamada programada con tu asesor de Amar Show Center. Por favor responde 'CONFIRMO' para apartar el horario."
+        message: "Hola [NombreCliente], te recordamos que mañana a las [HoraEvento] tienes tu cita con tu asesor comercial de Amar Show Center para la planeación de tu [TipoEvento].\n\nPor favor responde 'CONFIRMO' para asegurar tu horario. ¡Será un gusto atenderte!"
       },
       reminder_2h: {
         active: true,
         title: "Recordatorio 2 Horas",
-        description: "Alerta final enviada 2 horas antes de la llamada de asesoría comercial.",
+        description: "Alerta final enviada 2 horas antes de la reunión, llamada o visita al show center.",
         channel: "WhatsApp / SMS",
         icon: "⏳",
-        message: "Hola [NombreProspecto], tu llamada con Amar Show Center es en 2 horas ([HoraCita]). Nuestro ejecutivo [Ejecutivo] estará listo para brindarte toda la información de tu evento."
+        message: "Hola [NombreCliente], tu cita con Amar Show Center es en 2 horas ([HoraEvento]). Tu asesor [Ejecutivo] está listo con la propuesta y cotización de tu [TipoEvento]. ¡Nos vemos pronto frente al mar!"
       },
       followup: {
         active: true,
-        title: "Seguimiento Post-Llamada",
-        description: "Se envía 24 horas después de la llamada para compartir cotización y paquete personalizado.",
+        title: "Seguimiento Post-Cita & Cotización",
+        description: "Se envía 24 horas después para compartir la propuesta personalizada de banquete, terraza o evento deportivo.",
         channel: "WhatsApp",
         icon: "📋",
-        message: "Hola [NombreProspecto], fue un placer atenderte. Te enviamos la propuesta personalizada para tu [TipoEvento] en Amar Show Center. ¿Tienes alguna duda sobre los paquetes o disponibilidad de fecha?"
+        message: "Hola [NombreCliente], fue un placer recibirte. Te compartimos la propuesta formal y cotización personalizada para tu [TipoEvento] en Amar Show Center.\n\n¿Tienes alguna duda sobre los paquetes, menú de restaurante o disponibilidad de fecha? Con gusto podemos apartar tu día."
       },
-      pozole_promo: {
+      restaurante_pozole: {
         active: true,
-        title: "Difusión Jueves Pozolero",
-        description: "Invitación semanal con menú tradicional, música en vivo y apartado de mesa preferencial.",
+        title: "Restaurante & Jueves Pozolero",
+        description: "Difusión gastronómica semanal con menú tradicional guerrerense, show en vivo y apartado de mesa.",
         channel: "WhatsApp Masivo",
         icon: "🍲",
-        message: "🍲 ¡Jueves Pozolero en Amar Show Center! Ven a disfrutar del mejor pozole verde y blanco de Acapulco con show en vivo frente al mar. Reserva tu mesa respondiendo este mensaje o al 744-123-4567. ¡Mezcal de bienvenida!"
+        message: "🍲 ¡Jueves Pozolero en el Restaurante de Amar Show Center Acapulco! Disfruta del mejor pozole verde y blanco, botanas tradicionales, show musical en vivo y vista espectacular al mar.\n\nAparta tu mesa preferencial respondiendo este mensaje o al 744-123-4567. ¡Mezcal artesanal de cortesía!"
       },
-      eventos_promo: {
-        active: false,
-        title: "Promoción Bodas & XV Años",
-        description: "Campaña para prospectos calificados interesados en paquetes completos con banquete y audio.",
+      eventos_sociales: {
+        active: true,
+        title: "Eventos Sociales (Bodas, XV & Fiestas)",
+        description: "Campaña para clientes interesados en paquetes integrales: banquete de 3 tiempos, terraza, iluminación y DJ.",
         channel: "SMS / WhatsApp",
         icon: "✨",
-        message: "✨ ¡Haz realidad tu evento soñado en Amar Show Center! Agenda tu visita guiada este mes y obtén cortesía especial en iluminación y DJ para Bodas y XV Años. Responde 'INFO' para enviarte el catálogo."
+        message: "✨ ¡Haz inolvidable tu celebración en Amar Show Center! Bodas, XV Años y Graduaciones con terrazas panorámicas y banquetes de alta cocina.\n\nAl reservar tu fecha este mes, recibe cortesía especial en iluminación arquitectónica y cabina de DJ. Responde 'CATALOGO' para enviarte opciones."
+      },
+      eventos_deportivos: {
+        active: true,
+        title: "Eventos Deportivos & Shows en Vivo",
+        description: "Preventa y reservaciones exclusivas para funciones de box, lucha libre, torneos y transmisiones en pantallas gigantes.",
+        channel: "SMS / WhatsApp",
+        icon: "🥊",
+        message: "🥊 ¡La emoción del deporte y los espectáculos se vive en Amar Show Center! Pantallas gigantes, sonido de concierto, servicio de restaurante-bar y el mejor ambiente frente al mar.\n\nConsulta nuestra cartelera de eventos deportivos y reserva tu zona VIP respondiendo 'CARTELERA'."
       }
     };
 
@@ -1860,7 +1870,13 @@
       if (rRes.data) S.reservaciones = rRes.data;
       if (cfgRes.data) S.configAgenda = cfgRes.data;
       if (campRes?.data?.settings) {
-        S.campaigns = { ...DEFAULT_CAMPAIGNS, ...campRes.data.settings };
+        const raw = campRes.data.settings;
+        const isLegacyMedical = JSON.stringify(raw).includes('Paciente') || JSON.stringify(raw).includes('consulta');
+        if (isLegacyMedical) {
+          S.campaigns = { ...DEFAULT_CAMPAIGNS };
+        } else {
+          S.campaigns = { ...DEFAULT_CAMPAIGNS, ...raw };
+        }
       } else {
         S.campaigns = { ...DEFAULT_CAMPAIGNS };
       }
@@ -2475,11 +2491,12 @@
       S.testCampaignKey = key;
       $('mtc-titulo').textContent = `▶ Probar: ${c.title}`;
       $('mtc-preview').textContent = c.message
-        .replace(/\[NombreProspecto\]/g, 'Carlos Méndez')
-        .replace(/\[FechaCita\]/g, 'Jueves 12 de Noviembre')
-        .replace(/\[HoraCita\]/g, '17:00')
-        .replace(/\[Ejecutivo\]/g, 'Jorge López')
-        .replace(/\[TipoEvento\]/g, 'Boda en Terraza Amar');
+        .replace(/\[NombreCliente\]|\[NombreProspecto\]/g, 'Carlos Méndez')
+        .replace(/\[FechaEvento\]|\[FechaCita\]/g, 'Sábado 28 de Noviembre')
+        .replace(/\[HoraEvento\]|\[HoraCita\]/g, '17:00')
+        .replace(/\[TipoEvento\]/g, 'Boda en Terraza Amar')
+        .replace(/\[Invitados\]/g, '250')
+        .replace(/\[Ejecutivo\]/g, 'Jorge López');
       $('mtc-status-feedback').innerHTML = '';
       $('modal-test-campana').style.display = 'flex';
     };
@@ -2514,8 +2531,9 @@
       const seg = $('ncm-segmento').value;
       let count = 0;
       if (seg === 'todos') count = S.prospectos.length || 1204;
-      else if (seg === 'bodas') count = S.prospectos.filter(p => (p.tipo_evento || '').toLowerCase().includes('boda') || (p.tipo_evento || '').toLowerCase().includes('xv')).length || 450;
-      else if (seg === 'pozole') count = S.reservaciones.reduce((a, r) => a + (r.personas || 0), 0) || 6004;
+      else if (seg === 'restaurante') count = S.reservaciones.reduce((a, r) => a + (r.personas || 0), 0) || 6004;
+      else if (seg === 'sociales') count = S.prospectos.filter(p => ['boda', 'xv', 'graduacion', 'aniversario', 'social'].some(k => (p.tipo_evento || '').toLowerCase().includes(k))).length || 450;
+      else if (seg === 'deportivos') count = S.prospectos.filter(p => ['deporte', 'box', 'lucha', 'show', 'concierto', 'deportivo'].some(k => (p.tipo_evento || '').toLowerCase().includes(k))).length || 280;
       else if (seg === 'calificados') count = S.prospectos.filter(p => ['CALIFICADO', 'EN_NEGOCIACION', 'PROPUESTA_ENVIADA'].includes(p.estado_comercial)).length || 185;
       
       $('ncm-audiencia-conteo').textContent = `${count.toLocaleString('es-MX')} destinatarios seleccionados`;
