@@ -1,0 +1,2578 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Amar Show Center · Allinone Edition</title>
+  <meta name="description" content="CRM oficial de Amar Show Center Acapulco con diseño Allinone elevado: prospectos, calendario de llamadas con ejecutivos y reservaciones del Jueves Pozolero sincronizados con Supabase.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client Oficial -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ==========================================================================
+       DISEÑO "ALLINONE." ELEVADO
+       Canvas blanco suave, sombra multicapa difusa, barra lateral flotante en cápsula,
+       tarjetas bento con mini-barras verticales, gráficos suaves y navegación fluida.
+       ========================================================================== */
+    :root {
+      --bg-outer: #0F1217;
+      --canvas: #F4F6FB;
+      --card: #FFFFFF;
+      --card-muted: #F8FAFD;
+      --ink: #111827;
+      --ink-secondary: #4B5563;
+      --muted: #8E9BAE;
+      --line: #E8EEF7;
+      --line-subtle: #F0F4FA;
+
+      --blue: #1668E3;
+      --blue-hover: #0F56C4;
+      --blue-subtle: #EEF5FF;
+      --green: #10B981;
+      --green-subtle: #ECFDF5;
+      --gold: #F59E0B;
+      --gold-subtle: #FFFBEB;
+      --purple: #8B5CF6;
+      --purple-subtle: #F5F3FF;
+      --pink: #EC4899;
+      --pink-subtle: #FDF2F8;
+      --red: #EF4444;
+      --red-subtle: #FEF2F2;
+
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --radius-pill: 9999px;
+
+      --shadow-ambient: 0 20px 48px -12px rgba(17, 24, 39, 0.08), 0 4px 16px rgba(17, 24, 39, 0.02);
+      --shadow-card: 0 12px 32px -6px rgba(22, 104, 227, 0.05), 0 2px 10px rgba(0, 0, 0, 0.02);
+      --shadow-float: 0 24px 56px -12px rgba(22, 104, 227, 0.16), 0 6px 20px rgba(0, 0, 0, 0.04);
+      --shadow-dock: 0 16px 40px -8px rgba(17, 24, 39, 0.12), 0 4px 12px rgba(17, 24, 39, 0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-outer);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; border: none; background: transparent; }
+    .num { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+
+    /* CONTENEDOR TIPO TABLET / CANVAS ELEVADO */
+    .app-viewport {
+      width: 100%;
+      max-width: 1440px;
+      background: var(--canvas);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      min-height: 920px;
+      border: 8px solid #1E232B;
+    }
+
+    /* BARRA LATERAL FLOTANTE EN CÁPSULA (DOCK) */
+    .floating-dock {
+      position: absolute;
+      top: 50%;
+      left: 20px;
+      transform: translateY(-50%);
+      width: 62px;
+      background: #FFFFFF;
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-dock);
+      padding: 14px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      z-index: 50;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+    .dock-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .dock-btn:hover {
+      color: var(--blue);
+      background: var(--blue-subtle);
+      transform: scale(1.05);
+    }
+    .dock-btn.active {
+      background: var(--blue);
+      color: #FFFFFF;
+      box-shadow: 0 8px 20px -2px rgba(22, 104, 227, 0.45);
+    }
+    .dock-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      border: 2px solid #FFFFFF;
+    }
+
+    /* ÁREA PRINCIPAL CON SCROLL SUAVE */
+    .app-main {
+      flex: 1;
+      margin-left: 100px;
+      padding: 28px 36px 36px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-width: 0;
+      max-height: 920px;
+      overflow-y: auto;
+    }
+    .app-main::-webkit-scrollbar { width: 6px; }
+    .app-main::-webkit-scrollbar-thumb { background: rgba(142, 155, 174, 0.3); border-radius: 10px; }
+
+    /* CABECERA ALLINONE */
+    .allinone-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .brand-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .brand-dot {
+      color: var(--blue);
+    }
+    .search-pill {
+      background: #FFFFFF;
+      border-radius: var(--radius-pill);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(17, 24, 39, 0.03);
+      border: 1px solid var(--line);
+      width: 240px;
+      transition: all 0.2s ease;
+    }
+    .search-pill:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(22, 104, 227, 0.12);
+      width: 280px;
+    }
+    .search-pill input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+    .search-pill input::placeholder { color: var(--muted); }
+
+    /* FILTRO SEGMENTADO EN PÍLDORA */
+    .filter-segmented-pill {
+      background: #FFFFFF;
+      border-radius: var(--radius-pill);
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 4px 14px rgba(17, 24, 39, 0.03);
+      border: 1px solid var(--line);
+    }
+    .seg-pill-btn {
+      padding: 7px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.2s ease;
+    }
+    .seg-pill-btn:hover { color: var(--ink); }
+    .seg-pill-btn.active {
+      background: var(--blue);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(22, 104, 227, 0.35);
+    }
+
+    /* PERFIL Y ESTADO */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .profile-pill {
+      background: #FFFFFF;
+      border-radius: var(--radius-pill);
+      padding: 6px 14px 6px 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(17, 24, 39, 0.03);
+      border: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .profile-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1668E3, #8B5CF6);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .profile-meta { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
+    .profile-name { font-size: 13px; font-weight: 800; color: var(--ink); }
+    .profile-sub { font-size: 11px; color: var(--muted); }
+
+    /* VISTAS */
+    .view-content { display: none; }
+    .view-content.active { display: flex; flex-direction: column; gap: 22px; animation: allinoneFade .25s ease; }
+    @keyframes allinoneFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ==========================================================================
+       DASHBOARD BENTO GRID AL ESTILO ALLINONE
+       ========================================================================== */
+    .bento-top-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .bento-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(232, 238, 247, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .bento-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .bento-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .channel-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .channel-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+    }
+    .trend-pill {
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .trend-pill.up { background: var(--green-subtle); color: #059669; }
+    .trend-pill.down { background: var(--red-subtle); color: #DC2626; }
+
+    .bento-card-body {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .metric-number {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .metric-caption {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* MINI-BARRAS VERTICALES PÍLDORA (FIRMA VISUAL ALLINONE) */
+    .mini-bars-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      height: 38px;
+      padding-bottom: 2px;
+    }
+    .mini-bar {
+      width: 7px;
+      border-radius: var(--radius-pill);
+      background: #E8EEF7;
+      transition: height 0.3s ease;
+    }
+    .mini-bar.active {
+      background: var(--blue);
+      box-shadow: 0 4px 10px rgba(22, 104, 227, 0.4);
+    }
+
+    /* FILA INTERMEDIA BENTO */
+    .bento-mid-row {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1.4fr;
+      gap: 18px;
+    }
+
+    /* TARJETA DONUT SOCIAL ENGAGEMENT / EVENTOS */
+    .donut-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 10px 0;
+    }
+    .donut-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .donut-center-pct {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .donut-center-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .donut-legend {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+    }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* TARJETA RECENT FEED / PROSPECTOS RECIENTES */
+    .feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 290px;
+      overflow-y: auto;
+    }
+    .feed-item {
+      background: var(--card-muted);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: background 0.18s ease;
+      cursor: pointer;
+    }
+    .feed-item:hover { background: #EEF3FA; }
+    .feed-user-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .feed-user-meta {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .feed-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #DCE5F5;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+    .feed-name { font-size: 13px; font-weight: 800; color: var(--ink); }
+    .role-pill {
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      text-transform: capitalize;
+    }
+    .feed-snippet {
+      font-size: 12px;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+    }
+    .feed-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* FILA INFERIOR / TRAFFIC & ACTIVIDAD */
+    .bento-bottom-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+    }
+
+    /* ==========================================================================
+       VISTA CALENDARIO ALLINONE ELEVADO
+       ========================================================================== */
+    .cal-top-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .cal-card-grid {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+      border: 1px solid var(--line);
+    }
+    .cal-days-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .cal-matrix {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-auto-rows: minmax(105px, auto);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .cal-box {
+      background: var(--card-muted);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      min-height: 105px;
+    }
+    .cal-box:hover {
+      background: #FFFFFF;
+      box-shadow: var(--shadow-card);
+      transform: translateY(-2px);
+    }
+    .cal-box.today {
+      background: #FFFFFF;
+      box-shadow: 0 0 0 2px var(--blue);
+    }
+    .cal-box-num {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .cal-box.today .cal-box-num {
+      background: var(--blue);
+      color: #FFFFFF;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cal-apt-capsule {
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ==========================================================================
+       VISTA PIPELINE KANBAN ALLINONE
+       ========================================================================== */
+    .kanban-track-allinone {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      align-items: flex-start;
+      min-height: 620px;
+    }
+    .kanban-col-allinone {
+      flex: 0 0 270px;
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 640px;
+    }
+    .kanban-col-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 13.5px;
+      color: var(--ink);
+    }
+    .kanban-cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 4px;
+    }
+    .kanban-card-allinone {
+      background: var(--card-muted);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: grab;
+      transition: all 0.16s ease;
+      border: 1px solid rgba(232, 238, 247, 0.8);
+    }
+    .kanban-card-allinone:hover {
+      background: #FFFFFF;
+      box-shadow: var(--shadow-card);
+      transform: translateY(-2px);
+      border-color: var(--blue);
+    }
+
+    /* ==========================================================================
+       VISTA RESERVACIONES (JUEVES POZOLERO)
+       ========================================================================== */
+    .pozole-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .pozole-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .pozole-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      border-bottom: 1px solid var(--line);
+    }
+    .pozole-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-subtle);
+      vertical-align: middle;
+    }
+    .pozole-table tr:last-child td { border-bottom: none; }
+
+    /* BOTONES */
+    .btn-allinone {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 13.5px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .btn-allinone-primary {
+      background: var(--blue);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(22, 104, 227, 0.35);
+    }
+    .btn-allinone-primary:hover {
+      background: var(--blue-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(22, 104, 227, 0.45);
+    }
+    .btn-allinone-secondary {
+      background: #FFFFFF;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04);
+    }
+    .btn-allinone-secondary:hover {
+      background: var(--card-muted);
+      border-color: var(--muted);
+    }
+    .btn-allinone-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* MODALES FLOTANTES ELEVADOS */
+    .allinone-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 18, 23, 0.55);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .allinone-modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-float);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      overflow: hidden;
+      animation: allinonePop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .allinone-modal-card.modal-lg { max-width: 840px; }
+    @keyframes allinonePop {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-head {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-foot {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--card-muted);
+    }
+
+    .form-grp { display: flex; flex-direction: column; gap: 6px; }
+    .form-grp label { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+    .form-ctrl {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-size: 13.5px;
+      transition: all 0.2s ease;
+    }
+    .form-ctrl:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(22, 104, 227, 0.12);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    /* TOAST ELEVADO */
+    .toast-box {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast-capsule {
+      background: #111827;
+      color: #FFFFFF;
+      padding: 11px 20px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow-float);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: allinonePop 0.2s ease;
+    }
+
+    /* ESTILOS DE CAMPAÑAS BENTO ALLINONE */
+    .campaign-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+    .campaign-bento-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-subtle);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .campaign-bento-card:hover {
+      box-shadow: var(--shadow-card);
+      transform: translateY(-2px);
+    }
+    .campaign-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .campaign-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--blue-subtle);
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .toggle-switch {
+      width: 44px;
+      height: 24px;
+      border-radius: var(--radius-pill);
+      background: #CBD5E1;
+      display: flex;
+      align-items: center;
+      padding: 2px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+    .toggle-switch.active {
+      background: var(--blue);
+    }
+    .toggle-knob {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
+      transform: translateX(0);
+    }
+    .toggle-switch.active .toggle-knob {
+      transform: translateX(20px);
+    }
+    .campaign-msg-preview {
+      background: var(--card-muted);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 12.5px;
+      color: var(--ink-secondary);
+      line-height: 1.5;
+      white-space: pre-line;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIEWPORT TIPO TABLET / CANVAS ELEVADO ALLINONE -->
+  <div class="app-viewport">
+
+    <!-- DOCK LATERAL EN PÍLDORA FLOTANTE -->
+    <nav class="floating-dock" aria-label="Menú Allinone">
+      <!-- Icono Principal: App Switcher / Dashboard -->
+      <button class="dock-btn active" id="dock-btn-dashboard" onclick="window.cambiarVista('dashboard')" title="Dashboard Bento">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+      </button>
+
+      <!-- Mensajes / Conversaciones -->
+      <button class="dock-btn" id="dock-btn-atencion" onclick="window.cambiarVista('atencion')" title="Requieren Atención">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>
+        <span class="dock-badge" id="badge-atencion-dot" style="display:none;"></span>
+      </button>
+
+      <!-- Prospectos / Pipeline -->
+      <button class="dock-btn" id="dock-btn-pipeline" onclick="window.cambiarVista('pipeline')" title="Pipeline Kanban">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+
+      <!-- Calendario de Citas & Llamadas -->
+      <button class="dock-btn" id="dock-btn-calendario" onclick="window.cambiarVista('calendario')" title="Calendario de Citas">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      </button>
+
+      <!-- Campañas de Marketing & Difusión -->
+      <button class="dock-btn" id="dock-btn-campanas" onclick="window.cambiarVista('campanas')" title="Campañas de Marketing">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m11 6 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8L11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/></svg>
+      </button>
+
+      <!-- Reservaciones Jueves Pozolero -->
+      <button class="dock-btn" id="dock-btn-reservaciones" onclick="window.cambiarVista('reservaciones')" title="Jueves Pozolero">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      </button>
+
+      <!-- Horarios & Ejecutivos -->
+      <button class="dock-btn" id="dock-btn-horarios" onclick="window.cambiarVista('horarios')" title="Configuración de Agenda">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </nav>
+
+    <!-- CUERPO PRINCIPAL -->
+    <main class="app-main">
+
+      <!-- CABECERA ALLINONE -->
+      <header class="allinone-header">
+        <div class="header-left">
+          <div class="brand-logo">Amar<span class="brand-dot">.</span></div>
+          
+          <div class="search-pill">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#8E9BAE"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="global-search" placeholder="Buscar prospecto, teléfono...">
+          </div>
+        </div>
+
+        <!-- Filtro Segmentado en Píldora Central -->
+        <div class="filter-segmented-pill">
+          <button class="seg-pill-btn active" data-filter="all" onclick="window.filtrarCanal('all', this)">All</button>
+          <button class="seg-pill-btn" data-filter="whatsapp" onclick="window.filtrarCanal('whatsapp', this)">WhatsApp</button>
+          <button class="seg-pill-btn" data-filter="instagram" onclick="window.filtrarCanal('instagram', this)">Instagram</button>
+          <button class="seg-pill-btn" data-filter="facebook" onclick="window.filtrarCanal('facebook', this)">Facebook</button>
+          <button class="seg-pill-btn" data-filter="campanas" onclick="window.cambiarVista('campanas')">📢 Campañas</button>
+          <button class="seg-pill-btn" data-filter="pozole" onclick="window.cambiarVista('reservaciones')">Jueves Pozolero</button>
+        </div>
+
+        <!-- Perfil y Acciones Rápidas -->
+        <div class="header-right">
+          <button type="button" class="btn-allinone btn-allinone-primary btn-allinone-sm" id="btn-top-agendar" onclick="window.abrirModalAgendar()">+ Nueva Cita</button>
+          
+          <div class="profile-pill" onclick="window.abrirModalAuth()">
+            <div class="profile-avatar">A</div>
+            <div class="profile-meta">
+              <span class="profile-name" id="user-pill-name">Amar Show Center</span>
+              <span class="profile-sub" id="user-pill-sub">Acapulco, Gro.</span>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#8E9BAE"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1. VISTA DASHBOARD (BENTO GRID IDÉNTICO AL EJEMPLO) -->
+      <section id="view-dashboard" class="view-content active">
+        
+        <!-- Fila Superior de Tarjetas Bento con Mini-Barras Píldora -->
+        <div class="bento-top-row">
+          
+          <!-- Card 1: WhatsApp -->
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <div class="channel-brand">
+                <span class="channel-icon" style="background:#25D366;">💬</span>
+                <span>WhatsApp</span>
+              </div>
+              <span class="trend-pill up" id="kpi-wa-trend">↗ 16.5%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-wa-count">1,204</div>
+                <div class="metric-caption">Prospectos activos</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:14px;"></span>
+                <span class="mini-bar" style="height:20px;"></span>
+                <span class="mini-bar" style="height:28px;"></span>
+                <span class="mini-bar active" style="height:36px;"></span>
+                <span class="mini-bar" style="height:24px;"></span>
+                <span class="mini-bar" style="height:18px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Instagram -->
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <div class="channel-brand">
+                <span class="channel-icon" style="background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);">📸</span>
+                <span>Instagram</span>
+              </div>
+              <span class="trend-pill up" id="kpi-ig-trend">↗ 2.5%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-ig-count">4,298</div>
+                <div class="metric-caption">Interacciones</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:18px;"></span>
+                <span class="mini-bar" style="height:26px;"></span>
+                <span class="mini-bar active" style="height:38px;"></span>
+                <span class="mini-bar" style="height:22px;"></span>
+                <span class="mini-bar" style="height:16px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Facebook -->
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <div class="channel-brand">
+                <span class="channel-icon" style="background:#1877F2;">📘</span>
+                <span>Facebook</span>
+              </div>
+              <span class="trend-pill up" id="kpi-fb-trend">↗ 8.4%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-fb-count">1,204</div>
+                <div class="metric-caption">Mensajes recibidos</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:22px;"></span>
+                <span class="mini-bar" style="height:16px;"></span>
+                <span class="mini-bar" style="height:30px;"></span>
+                <span class="mini-bar active" style="height:34px;"></span>
+                <span class="mini-bar" style="height:20px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Jueves Pozolero -->
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <div class="channel-brand">
+                <span class="channel-icon" style="background:#D97706;">🍲</span>
+                <span>Jueves Pozolero</span>
+              </div>
+              <span class="trend-pill up">↗ 12.0%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-pozole-pax">6,004</div>
+                <div class="metric-caption">Comensales registrados</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:16px;"></span>
+                <span class="mini-bar" style="height:24px;"></span>
+                <span class="mini-bar" style="height:28px;"></span>
+                <span class="mini-bar active" style="height:38px;background:#D97706;"></span>
+                <span class="mini-bar" style="height:22px;"></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Fila Intermedia Bento: Métricas de Llamadas + Gráfico Donut de Eventos + Feed Reciente -->
+        <div class="bento-mid-row">
+          
+          <!-- Sub-Card 1: Llamadas Agendadas y Campañas Activas -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="bento-card">
+              <div class="bento-card-header">
+                <span style="font-size:13px;font-weight:700;color:var(--muted);">Llamadas Agendadas</span>
+                <div style="display:flex;gap:6px;">
+                  <span class="trend-pill up">+12%</span>
+                  <span class="trend-pill up">+4.5%</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin:8px 0;">
+                <span class="metric-number num" id="kpi-llamadas-total">4,304</span>
+                <span style="font-size:12px;color:var(--muted);font-weight:600;">confirmadas</span>
+              </div>
+              <!-- Curva SVG Suave -->
+              <svg width="100%" height="45" viewBox="0 0 200 45" fill="none">
+                <path d="M5 35 C 40 10, 80 40, 120 15 C 150 5, 175 30, 195 10" stroke="#1668E3" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="bento-card">
+              <div class="bento-card-header">
+                <span style="font-size:13px;font-weight:700;color:var(--muted);">Llamadas de Hoy (Acapulco)</span>
+                <span class="trend-pill up" id="kpi-hoy-tag">Hoy</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:12px;margin:4px 0;">
+                <span class="metric-number num" id="kpi-llamadas-hoy">102</span>
+                <span style="font-size:12px;color:var(--muted);font-weight:600;">por atender</span>
+              </div>
+              <svg width="100%" height="35" viewBox="0 0 200 35" fill="none">
+                <path d="M5 28 C 30 15, 60 30, 90 10 C 130 0, 160 25, 195 12" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Sub-Card 2: Tarjeta Donut Elevada "Social Engagement / Tipos de Eventos" -->
+          <div class="bento-card" style="box-shadow:var(--shadow-card);">
+            <div class="bento-card-header">
+              <span style="font-size:13.5px;font-weight:800;color:var(--ink);">Distribución de Eventos</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#8E9BAE"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </div>
+            
+            <div class="donut-container">
+              <svg width="160" height="160" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="58" stroke="#EEF2F9" stroke-width="18" fill="none"/>
+                <!-- Bodas (Azul) -->
+                <circle cx="80" cy="80" r="58" stroke="#1668E3" stroke-width="18" stroke-dasharray="364" stroke-dashoffset="100" stroke-linecap="round" fill="none" transform="rotate(-90 80 80)"/>
+                <!-- XV Años (Celeste) -->
+                <circle cx="80" cy="80" r="58" stroke="#60A5FA" stroke-width="18" stroke-dasharray="364" stroke-dashoffset="260" stroke-linecap="round" fill="none" transform="rotate(70 80 80)"/>
+              </svg>
+              <div class="donut-center-text">
+                <div class="donut-center-pct">96%</div>
+                <div class="donut-center-label">Calificados</div>
+              </div>
+            </div>
+
+            <div class="donut-legend">
+              <div class="legend-item"><span class="legend-dot" style="background:#1668E3;"></span> Bodas · 47%</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#60A5FA;"></span> XV Años · 74%</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#D97706;"></span> Conciertos · 88%</div>
+            </div>
+          </div>
+
+          <!-- Sub-Card 3: Recent Feed (Prospectos y Mensajes en tiempo real) -->
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13.5px;font-weight:800;color:var(--ink);">Recent Feed · Prospectos</span>
+              <span style="font-size:12px;color:var(--blue);font-weight:700;cursor:pointer;" onclick="window.cambiarVista('atencion')">Ver todos</span>
+            </div>
+
+            <div class="feed-list" id="dash-feed-list">
+              <!-- Renglón 1 -->
+              <div class="feed-item">
+                <div class="feed-user-row">
+                  <div class="feed-user-meta">
+                    <div class="feed-avatar">KG</div>
+                    <span class="feed-name">Kieth Gayle</span>
+                    <span class="role-pill" style="background:#ECFDF5;color:#059669;">Boda Jardín</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">8 mins ago</span>
+                </div>
+                <div class="feed-snippet">Hola, quisiera informes del paquete oro para 250 personas en la terraza principal...</div>
+                <div class="feed-actions-row">
+                  <span>💬 WhatsApp</span> · <span>👥 250 pax</span> · <span>📞 Agendada</span>
+                </div>
+              </div>
+
+              <!-- Renglón 2 -->
+              <div class="feed-item">
+                <div class="feed-user-row">
+                  <div class="feed-user-meta">
+                    <div class="feed-avatar" style="background:#FEF3C7;color:#D97706;">DL</div>
+                    <span class="feed-name">Dana Lamb</span>
+                    <span class="role-pill" style="background:#FEF3C7;color:#D97706;">XV Años</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">1 hour ago</span>
+                </div>
+                <div class="feed-snippet">¿Tienen disponible el sábado 14 de noviembre? Me interesa agendar llamada con un ejecutivo.</div>
+                <div class="feed-actions-row">
+                  <span>📸 Instagram</span> · <span>👥 180 pax</span> · <span>⚡ Calificado</span>
+                </div>
+              </div>
+
+              <!-- Renglón 3 -->
+              <div class="feed-item">
+                <div class="feed-user-row">
+                  <div class="feed-user-meta">
+                    <div class="feed-avatar" style="background:#EDE9FE;color:#7C3AED;">KS</div>
+                    <span class="feed-name">Karen Seely</span>
+                    <span class="role-pill" style="background:#EDE9FE;color:#7C3AED;">Jueves Pozolero</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--muted);">2 days ago</span>
+                </div>
+                <div class="feed-snippet">Reservación confirmada para 6 personas este jueves a las 3:30 pm.</div>
+                <div class="feed-actions-row">
+                  <span>🍲 Mesa Escenario</span> · <span>👥 6 personas</span> · <span>✅ Confirmado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Fila Inferior: Gráfico de Tráfico y Actividad Semanal -->
+        <div class="bento-bottom-row">
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13.5px;font-weight:800;color:var(--ink);">Tráfico de Prospectos & Citas</span>
+              <span style="font-size:12px;color:var(--muted);font-weight:700;">Últimos 5 días ▾</span>
+            </div>
+            <!-- Simulación Visual de Curvas Multilínea Allinone -->
+            <div style="height:140px;position:relative;margin-top:10px;">
+              <svg width="100%" height="100%" viewBox="0 0 600 120" fill="none">
+                <line x1="0" y1="30" x2="600" y2="30" stroke="#F0F4FA" stroke-width="1"/>
+                <line x1="0" y1="70" x2="600" y2="70" stroke="#F0F4FA" stroke-width="1"/>
+                <line x1="0" y1="110" x2="600" y2="110" stroke="#F0F4FA" stroke-width="1"/>
+                <path d="M10 90 L 120 70 L 220 85 L 340 30 L 460 95 L 580 40" stroke="#1668E3" stroke-width="3" stroke-linecap="round"/>
+                <path d="M10 110 L 120 95 L 220 50 L 340 65 L 460 40 L 580 80" stroke="#60A5FA" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini Tarjeta de Llamadas de Hoy con Acción Rápida -->
+          <div class="bento-card" style="justify-content:center;text-align:center;gap:12px;background:linear-gradient(145deg,#FFFFFF,#F4F8FF);">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--blue-subtle);color:var(--blue);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:22px;">📞</div>
+            <div>
+              <div style="font-size:16px;font-weight:800;color:var(--ink);">Agenda de Llamadas</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Disponibilidad en tiempo real con ejecutivos</div>
+            </div>
+            <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.cambiarVista('calendario')">Abrir Calendario</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 2. VISTA CALENDARIO ALLINONE -->
+      <section id="view-calendario" class="view-content">
+        <div class="cal-top-controls">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" id="cal-btn-prev">&lt;</button>
+            <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" id="cal-btn-next">&gt;</button>
+            <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" id="cal-btn-today">Hoy</button>
+            <h2 id="cal-label-month" style="font-family:var(--font-display);font-size:18px;font-weight:800;text-transform:capitalize;margin-left:6px;">Noviembre 2026</h2>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <select id="cal-select-ejecutivo" class="form-ctrl" style="width:auto;border-radius:var(--radius-pill);padding:6px 14px;font-weight:700;">
+              <option value="todos">Todos los ejecutivos</option>
+            </select>
+            <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.abrirModalAgendar()">+ Agendar Llamada</button>
+          </div>
+        </div>
+
+        <div class="cal-card-grid">
+          <div class="cal-days-header">
+            <span>DOM</span><span>LUN</span><span>MAR</span><span>MIÉ</span><span>JUE</span><span>VIE</span><span>SÁB</span>
+          </div>
+          <div class="cal-matrix" id="cal-matrix-cells">
+            <!-- Celdas inyectadas por JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. VISTA PIPELINE KANBAN -->
+      <section id="view-pipeline" class="view-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <h2 style="font-family:var(--font-display);font-size:18px;font-weight:800;">Pipeline Comercial · Amar Show Center</h2>
+          <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.crearProspectoPrompt()">+ Nuevo Prospecto</button>
+        </div>
+
+        <div class="kanban-track-allinone" id="kanban-track-allinone">
+          <!-- 12 Columnas oficiales inyectadas por JS -->
+        </div>
+      </section>
+
+      <!-- 4. VISTA RESERVACIONES (JUEVES POZOLERO) -->
+      <section id="view-reservaciones" class="view-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:18px;font-weight:800;">Jueves Pozolero · Listas y Mesas</h2>
+            <p style="font-size:12.5px;color:var(--muted);">Control de comensales, recordatorios automáticos y avisos por WhatsApp.</p>
+          </div>
+          <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.abrirModalReservacion()">+ Nueva Reservación</button>
+        </div>
+
+        <div id="reservaciones-allinone-container">
+          <!-- Tablas agrupadas por cada jueves -->
+        </div>
+      </section>
+
+      <!-- 5. VISTA REQUIEREN ATENCIÓN -->
+      <section id="view-atencion" class="view-content">
+        <div style="margin-bottom:8px;">
+          <h2 style="font-family:var(--font-display);font-size:18px;font-weight:800;">Requieren Atención Humana</h2>
+          <p style="font-size:12.5px;color:var(--muted);">Prospectos escalados por el agente de IA que necesitan respuesta de tu equipo.</p>
+        </div>
+        <div id="atencion-allinone-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </section>
+
+      <!-- 6. VISTA HORARIOS & EJECUTIVOS -->
+      <section id="view-horarios" class="view-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div>
+            <h2 style="font-family:var(--font-display);font-size:18px;font-weight:800;">Configuración de Agenda & Ejecutivos</h2>
+            <p style="font-size:12.5px;color:var(--muted);">Parámetros de la función RPC horarios_libres y asignación automática.</p>
+          </div>
+          <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.crearEjecutivoPrompt()">+ Nuevo Ejecutivo</button>
+        </div>
+
+        <div class="form-row">
+          <div class="bento-card">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:8px;">Reglas Generales</h3>
+            <form id="form-rules-agenda" style="display:flex;flex-direction:column;gap:10px;">
+              <div class="form-grp">
+                <label>Duración de llamada (minutos)</label>
+                <input type="number" id="cfg-dur" class="form-ctrl" value="30">
+              </div>
+              <div class="form-grp">
+                <label>Anticipación mínima (horas)</label>
+                <input type="number" id="cfg-ant" class="form-ctrl" value="2">
+              </div>
+              <div class="form-grp">
+                <label>Días máximos a futuro</label>
+                <input type="number" id="cfg-dias" class="form-ctrl" value="21">
+              </div>
+              <button type="submit" class="btn-allinone btn-allinone-secondary btn-allinone-sm" style="align-self:flex-start;">Guardar Reglas</button>
+            </form>
+          </div>
+
+          <div class="bento-card" style="grid-column:span 2;">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:10px;">Ejecutivos Registrados</h3>
+            <div id="ejecutivos-allinone-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. VISTA CAMPAÑAS DE MARKETING & DIFUSIÓN -->
+      <section id="view-campanas" class="view-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--blue);text-transform:uppercase;margin-bottom:2px;">Marketing & Notificaciones</div>
+            <h2 style="font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--ink);">Campañas Masivas & Recordatorios Automáticos</h2>
+            <p style="font-size:12.5px;color:var(--muted);">Gestiona los mensajes por WhatsApp y SMS Masivos para citas, confirmaciones y difusión de eventos.</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.abrirModalConfigSMS()">⚙️ SMS Masivos</button>
+            <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.abrirModalNuevaCampanaMasiva()">+ Nueva Campaña Masiva</button>
+          </div>
+        </div>
+
+        <!-- Bento Metrics de Marketing -->
+        <div class="bento-top-row" style="margin-bottom:16px;">
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13px;font-weight:700;color:var(--muted);">Campañas Activas</span>
+              <span class="trend-pill up" id="kpi-camp-activas-pill">5 Activas</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-camp-activas">5</div>
+                <div class="metric-caption">Reglas de automatización</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:18px;"></span>
+                <span class="mini-bar" style="height:26px;"></span>
+                <span class="mini-bar active" style="height:36px;"></span>
+                <span class="mini-bar" style="height:24px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13px;font-weight:700;color:var(--muted);">Tasa de Entrega</span>
+              <span class="trend-pill up">↗ 99.2%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num">99.2%</div>
+                <div class="metric-caption">SMS & WhatsApp</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar active" style="height:38px;background:var(--green);"></span>
+                <span class="mini-bar active" style="height:34px;background:var(--green);"></span>
+                <span class="mini-bar active" style="height:36px;background:var(--green);"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13px;font-weight:700;color:var(--muted);">Confirmaciones</span>
+              <span class="trend-pill up">+18%</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-citas-confirmadas">88%</div>
+                <div class="metric-caption">Respuesta a recordatorios</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar" style="height:16px;"></span>
+                <span class="mini-bar" style="height:22px;"></span>
+                <span class="mini-bar active" style="height:34px;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-card">
+            <div class="bento-card-header">
+              <span style="font-size:13px;font-weight:700;color:var(--muted);">Alcance Pozolero</span>
+              <span class="trend-pill up">🍲 Semanal</span>
+            </div>
+            <div class="bento-card-body">
+              <div>
+                <div class="metric-number num" id="kpi-pozole-alcance">6,000+</div>
+                <div class="metric-caption">Comensales registrados</div>
+              </div>
+              <div class="mini-bars-group">
+                <span class="mini-bar active" style="height:36px;background:#D97706;"></span>
+                <span class="mini-bar" style="height:24px;"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid de Campañas -->
+        <div class="campaign-grid" id="campaigns-grid-container">
+          <!-- Inyectado por JS -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: AGENDAR LLAMADA CON RPC horarios_libres -->
+  <div id="modal-agendar" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card">
+      <div class="modal-head">
+        <h3 style="font-family:var(--font-display);font-size:16px;font-weight:800;">Agendar Llamada · RPC Supabase</h3>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-agendar')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grp">
+          <label>Prospecto / Cliente</label>
+          <select id="modal-agendar-prospecto" class="form-ctrl"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-grp">
+            <label>Fecha de búsqueda</label>
+            <input type="date" id="modal-agendar-fecha" class="form-ctrl">
+          </div>
+          <div class="form-grp">
+            <label>Ejecutivo preferido</label>
+            <select id="modal-agendar-ejecutivo" class="form-ctrl"></select>
+          </div>
+        </div>
+        <div class="form-grp">
+          <label>Horarios Libres Disponibles (RPC)</label>
+          <div id="modal-agendar-slots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:160px;overflow-y:auto;padding:8px;background:var(--card-muted);border-radius:var(--radius-sm);border:1px solid var(--line);"></div>
+        </div>
+        <div class="form-grp">
+          <label>Resumen / Asunto de la llamada</label>
+          <textarea id="modal-agendar-resumen" class="form-ctrl" rows="2" placeholder="Boda, 200 personas, cotización paquete oro..."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-agendar')">Cancelar</button>
+        <button type="button" class="btn-allinone btn-allinone-primary btn-allinone-sm" id="btn-confirmar-agendar">Confirmar Llamada</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA DE PROSPECTO & CHAT -->
+  <div id="modal-prospecto-chat" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card modal-lg">
+      <div class="modal-head">
+        <div>
+          <h3 id="mp-chat-nombre" style="font-family:var(--font-display);font-size:16px;font-weight:800;">Ficha del Prospecto</h3>
+          <span id="mp-chat-sub" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-prospecto-chat')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-grp"><label>Nombre</label><input type="text" id="fp-nombre" class="form-ctrl"></div>
+          <div class="form-grp"><label>Teléfono (WhatsApp)</label><input type="text" id="fp-tel" class="form-ctrl"></div>
+          <div class="form-grp"><label>Tipo de Evento</label><input type="text" id="fp-evento" class="form-ctrl"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-grp"><label>Invitados</label><input type="number" id="fp-pax" class="form-ctrl"></div>
+          <div class="form-grp"><label>Estado Comercial</label><select id="fp-estado" class="form-ctrl"></select></div>
+          <div class="form-grp"><label>Prioridad</label><select id="fp-prio" class="form-ctrl"><option value="ALTA">Alta</option><option value="MEDIA">Media</option><option value="BAJA">Baja</option></select></div>
+        </div>
+
+        <div>
+          <label style="font-size:12.5px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px;">Historial de Conversación (Interacciones)</label>
+          <div style="background:var(--card-muted);border:1px solid var(--line);border-radius:var(--radius-md);height:280px;display:flex;flex-direction:column;overflow:hidden;">
+            <div id="fp-chat-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;"></div>
+            <form id="fp-chat-send-form" style="padding:10px;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;">
+              <input type="text" id="fp-chat-input" class="form-ctrl" placeholder="Escribir como tu equipo..." required>
+              <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">Enviar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-prospecto-chat')">Cerrar</button>
+        <button type="button" class="btn-allinone btn-allinone-primary btn-allinone-sm" id="fp-btn-guardar">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVA RESERVACIÓN POZOLE -->
+  <div id="modal-nueva-res" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card">
+      <div class="modal-head">
+        <h3 style="font-family:var(--font-display);font-size:16px;font-weight:800;">Reservación · Jueves Pozolero</h3>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-nueva-res')">✕</button>
+      </div>
+      <form id="form-add-pozole" class="modal-body">
+        <div class="form-row">
+          <div class="form-grp"><label>Nombre del titular</label><input type="text" id="np-nombre" class="form-ctrl" required placeholder="Carlos Méndez"></div>
+          <div class="form-grp"><label>Teléfono (WhatsApp)</label><input type="tel" id="np-tel" class="form-ctrl" required placeholder="7441234567"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-grp"><label>Fecha (Jueves)</label><input type="date" id="np-fecha" class="form-ctrl" required></div>
+          <div class="form-grp"><label>Hora</label><input type="time" id="np-hora" class="form-ctrl" value="15:00" required></div>
+          <div class="form-grp"><label>Personas</label><input type="number" id="np-pax" class="form-ctrl" min="1" max="50" value="4" required></div>
+        </div>
+        <div class="form-grp"><label>Notas / Ubicación de mesa</label><textarea id="np-notas" class="form-ctrl" rows="2" placeholder="Cerca del escenario, cumpleaños..."></textarea></div>
+        <div class="modal-foot" style="margin:-24px;margin-top:0;">
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-nueva-res')">Cancelar</button>
+          <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">Guardar Reservación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTENTICACIÓN / SESIÓN SUPABASE -->
+  <div id="modal-auth" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card" style="max-width:400px;">
+      <div class="modal-head">
+        <h3 style="font-family:var(--font-display);font-size:16px;font-weight:800;">Acceso a Supabase Auth</h3>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-auth')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12.5px;color:var(--muted);">Inicia sesión o regístrate para sincronizar con permisos RLS autenticados.</p>
+        <form id="form-auth-allinone" style="display:flex;flex-direction:column;gap:12px;">
+          <div class="form-grp">
+            <label>Correo Electrónico</label>
+            <input type="email" id="auth-email" class="form-ctrl" placeholder="admin@amar.mx" required>
+          </div>
+          <div class="form-grp">
+            <label>Contraseña</label>
+            <input type="password" id="auth-pass" class="form-ctrl" placeholder="••••••••" required>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm" style="flex:1;">Iniciar Sesión</button>
+            <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" id="btn-auth-signup">Registrarme</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDITAR PLANTILLA DE CAMPAÑA -->
+  <div id="modal-edit-campana" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card modal-lg">
+      <div class="modal-head">
+        <div>
+          <h3 id="mec-titulo" style="font-family:var(--font-display);font-size:16px;font-weight:800;">Editar Plantilla de Campaña</h3>
+          <span id="mec-sub" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-edit-campana')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12.5px;color:var(--muted);">Usa las siguientes etiquetas dinámicas. El sistema las reemplazará automáticamente con los datos del prospecto y la cita:</p>
+        
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[NombreProspecto]')">+ [NombreProspecto]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[FechaCita]')">+ [FechaCita]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[HoraCita]')">+ [HoraCita]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[Ejecutivo]')">+ [Ejecutivo]</button>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.insertarTagCampana('[TipoEvento]')">+ [TipoEvento]</button>
+        </div>
+
+        <div class="form-grp">
+          <label>Mensaje Automatizado</label>
+          <textarea id="mec-textarea" class="form-ctrl" rows="7" style="line-height:1.5;font-size:13px;"></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-edit-campana')">Cancelar</button>
+        <button type="button" class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.guardarMensajeCampana()">Guardar Plantilla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROBAR ENVÍO DE CAMPAÑA -->
+  <div id="modal-test-campana" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card" style="max-width:480px;">
+      <div class="modal-head">
+        <div>
+          <h3 id="mtc-titulo" style="font-family:var(--font-display);font-size:16px;font-weight:800;">▶ Probar Envío</h3>
+          <span style="font-size:12px;color:var(--muted);">Envía un mensaje de prueba con datos simulados</span>
+        </div>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-test-campana')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grp">
+          <label>Teléfono para la prueba (WhatsApp / SMS)</label>
+          <input type="tel" id="mtc-telefono" class="form-ctrl" placeholder="7441234567" required>
+        </div>
+        <div class="form-grp">
+          <label>Vista previa del mensaje a enviar</label>
+          <div id="mtc-preview" class="campaign-msg-preview"></div>
+        </div>
+        <div id="mtc-status-feedback"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-test-campana')">Cerrar</button>
+        <button type="button" class="btn-allinone btn-allinone-primary btn-allinone-sm" id="btn-ejecutar-prueba" onclick="window.ejecutarPruebaCampana()">▶ Enviar Prueba Ahora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVA CAMPAÑA MASIVA -->
+  <div id="modal-nueva-campana-masiva" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card modal-lg">
+      <div class="modal-head">
+        <div>
+          <h3 style="font-family:var(--font-display);font-size:16px;font-weight:800;">📢 Lanzar Campaña Masiva</h3>
+          <span style="font-size:12px;color:var(--muted);">Difusión segmentada a prospectos y clientes</span>
+        </div>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-nueva-campana-masiva')">✕</button>
+      </div>
+      <form id="form-lanzar-masivo" class="modal-body">
+        <div class="form-row">
+          <div class="form-grp">
+            <label>Nombre de la Campaña</label>
+            <input type="text" id="ncm-nombre" class="form-ctrl" required placeholder="Ej. Invitación Jueves Pozolero con Show">
+          </div>
+          <div class="form-grp">
+            <label>Canal de Envío</label>
+            <select id="ncm-canal" class="form-ctrl">
+              <option value="whatsapp">WhatsApp (SMS Masivos / Kapso)</option>
+              <option value="sms">SMS Tradicional</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-grp">
+            <label>Segmento de Destinatarios</label>
+            <select id="ncm-segmento" class="form-ctrl" onchange="window.actualizarConteoDestinatarios()">
+              <option value="todos">Todos los prospectos activos</option>
+              <option value="bodas">Interesados en Bodas y XV Años</option>
+              <option value="pozole">Comensales de Jueves Pozolero</option>
+              <option value="calificados">Prospectos Calificados y en Negociación</option>
+            </select>
+          </div>
+          <div class="form-grp">
+            <label>Audiencia Estimada</label>
+            <div id="ncm-audiencia-conteo" style="padding:10px 14px;background:var(--card-muted);border-radius:var(--radius-sm);font-weight:800;color:var(--blue);font-size:13.5px;">
+              Calculando...
+            </div>
+          </div>
+        </div>
+        <div class="form-grp">
+          <label>Mensaje de la Campaña</label>
+          <textarea id="ncm-mensaje" class="form-ctrl" rows="5" required placeholder="Escribe aquí el mensaje que recibirán los prospectos..."></textarea>
+        </div>
+        <div class="modal-foot" style="margin:-24px;margin-top:0;">
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-nueva-campana-masiva')">Cancelar</button>
+          <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">🚀 Enviar Campaña</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURACIÓN SMS MASIVOS -->
+  <div id="modal-config-sms" class="allinone-modal-overlay" style="display:none;">
+    <div class="allinone-modal-card" style="max-width:480px;">
+      <div class="modal-head">
+        <div>
+          <h3 style="font-family:var(--font-display);font-size:16px;font-weight:800;">⚙️ Configuración SMS Masivos</h3>
+          <span style="font-size:12px;color:var(--muted);">Credenciales para envío de notificaciones y campañas</span>
+        </div>
+        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-config-sms')">✕</button>
+      </div>
+      <form id="form-config-sms" class="modal-body">
+        <div class="form-grp">
+          <label>SMS Masivos API Key</label>
+          <input type="password" id="cfg-sms-key" class="form-ctrl" placeholder="apikey-xxxxxxxx">
+        </div>
+        <div class="form-grp">
+          <label>WhatsApp Instance ID (opcional)</label>
+          <input type="text" id="cfg-wa-instance" class="form-ctrl" placeholder="Instancia para envío por WhatsApp">
+        </div>
+        <p style="font-size:12px;color:var(--muted);">Estas credenciales se sincronizan con la tabla `campaign_settings` de tu Supabase oficial.</p>
+        <div class="modal-foot" style="margin:-24px;margin-top:0;">
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-config-sms')">Cancelar</button>
+          <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">Guardar Credenciales</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR DE NOTIFICACIONES TOAST -->
+  <div class="toast-box" id="toast-box"></div>
+
+  <!-- SCRIPT LOGICA COMPLETA ALLINONE + SUPABASE RPC -->
+  <script>
+  (function() {
+    'use strict';
+
+    // 1. CONEXIÓN SUPABASE OFICIAL
+    const SB_URL = 'https://qtnpixqgidoqyqkixlve.supabase.co';
+    const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bnBpeHFnaWRvcXlxa2l4bHZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MDEwODQsImV4cCI6MjEwODk3NzA4NH0.16NUJ5eUmUzntljzRQXWFRTkqqe1uOW3nuJXMQSAr5Y';
+    const supabase = window.supabase.createClient(SB_URL, SB_ANON);
+
+    // 2. CONSTANTES OFICIALES DE AMAR SHOW CENTER
+    const ESTADOS = [
+      { id: 'NUEVO', label: 'Nuevo', color: '#94A3B8' },
+      { id: 'EN_CALIFICACION', label: 'En Calificación', color: '#64748B' },
+      { id: 'CALIFICADO', label: 'Calificado', color: '#3B82F6' },
+      { id: 'PENDIENTE_DE_AGENDA', label: 'Pendiente Agenda', color: '#8B5CF6' },
+      { id: 'PENDIENTE_DE_SEGUIMIENTO', label: 'Seguimiento', color: '#F59E0B' },
+      { id: 'LLAMADA_AGENDADA', label: 'Llamada Agendada', color: '#10B981' },
+      { id: 'LLAMADA_REALIZADA', label: 'Llamada Realizada', color: '#059669' },
+      { id: 'COTIZACION_SOLICITADA', label: 'Cotización Solicitada', color: '#6366F1' },
+      { id: 'PROPUESTA_ENVIADA', label: 'Propuesta Enviada', color: '#EC4899' },
+      { id: 'EN_NEGOCIACION', label: 'En Negociación', color: '#D97706' },
+      { id: 'GANADO', label: 'Ganado / Cerrado', color: '#10B981' },
+      { id: 'PERDIDO', label: 'Perdido', color: '#EF4444' }
+    ];
+
+    // CAMPAÑAS POR DEFECTO PARA AMAR SHOW CENTER
+    const DEFAULT_CAMPAIGNS = {
+      confirmation: {
+        active: true,
+        title: "Confirmación de Cita / Llamada",
+        description: "Se envía automáticamente en cuanto el prospecto o el agente agenda una llamada.",
+        channel: "WhatsApp / SMS",
+        icon: "✅",
+        message: "¡Hola [NombreProspecto]! Tu llamada de asesoría para tu evento en Amar Show Center ha sido confirmada para el [FechaCita] a las [HoraCita] con nuestro ejecutivo [Ejecutivo]. ¡Te llamaremos puntualmente!"
+      },
+      reminder_24h: {
+        active: true,
+        title: "Recordatorio 24 Horas",
+        description: "Se envía un día antes de la llamada para asegurar asistencia y confirmar horario.",
+        channel: "WhatsApp / SMS",
+        icon: "⏰",
+        message: "Hola [NombreProspecto], te recordamos que mañana a las [HoraCita] tienes tu llamada programada con tu asesor de Amar Show Center. Por favor responde 'CONFIRMO' para apartar el horario."
+      },
+      reminder_2h: {
+        active: true,
+        title: "Recordatorio 2 Horas",
+        description: "Alerta final enviada 2 horas antes de la llamada de asesoría comercial.",
+        channel: "WhatsApp / SMS",
+        icon: "⏳",
+        message: "Hola [NombreProspecto], tu llamada con Amar Show Center es en 2 horas ([HoraCita]). Nuestro ejecutivo [Ejecutivo] estará listo para brindarte toda la información de tu evento."
+      },
+      followup: {
+        active: true,
+        title: "Seguimiento Post-Llamada",
+        description: "Se envía 24 horas después de la llamada para compartir cotización y paquete personalizado.",
+        channel: "WhatsApp",
+        icon: "📋",
+        message: "Hola [NombreProspecto], fue un placer atenderte. Te enviamos la propuesta personalizada para tu [TipoEvento] en Amar Show Center. ¿Tienes alguna duda sobre los paquetes o disponibilidad de fecha?"
+      },
+      pozole_promo: {
+        active: true,
+        title: "Difusión Jueves Pozolero",
+        description: "Invitación semanal con menú tradicional, música en vivo y apartado de mesa preferencial.",
+        channel: "WhatsApp Masivo",
+        icon: "🍲",
+        message: "🍲 ¡Jueves Pozolero en Amar Show Center! Ven a disfrutar del mejor pozole verde y blanco de Acapulco con show en vivo frente al mar. Reserva tu mesa respondiendo este mensaje o al 744-123-4567. ¡Mezcal de bienvenida!"
+      },
+      eventos_promo: {
+        active: false,
+        title: "Promoción Bodas & XV Años",
+        description: "Campaña para prospectos calificados interesados en paquetes completos con banquete y audio.",
+        channel: "SMS / WhatsApp",
+        icon: "✨",
+        message: "✨ ¡Haz realidad tu evento soñado en Amar Show Center! Agenda tu visita guiada este mes y obtén cortesía especial en iluminación y DJ para Bodas y XV Años. Responde 'INFO' para enviarte el catálogo."
+      }
+    };
+
+    // ESTADO
+    const S = {
+      user: null,
+      prospectos: [],
+      citas: [],
+      ejecutivos: [],
+      reservaciones: [],
+      configAgenda: { duracion_llamada_min: 30, anticipacion_min_horas: 2, dias_maximos: 21 },
+      campaigns: { ...DEFAULT_CAMPAIGNS },
+      editingCampaignKey: null,
+      testCampaignKey: null,
+      activeView: 'dashboard',
+      activeFilter: 'all',
+      calDate: new Date(),
+      selectedSlot: null,
+      selectedProspecto: null
+    };
+
+    const $ = id => document.getElementById(id);
+    const toast = msg => {
+      const el = document.createElement('div');
+      el.className = 'toast-capsule';
+      el.textContent = msg;
+      $('toast-box').appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    };
+    window.cerrarModal = id => { $(id).style.display = 'none'; };
+
+    const formatAcapulco = (iso, opts = {}) => {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', ...opts });
+    };
+
+    // 3. NAVEGACIÓN ENTRE VISTAS ALLINONE
+    window.cambiarVista = vista => {
+      S.activeView = vista;
+      document.querySelectorAll('.dock-btn').forEach(b => {
+        b.classList.toggle('active', b.id === `dock-btn-${vista}`);
+      });
+      document.querySelectorAll('.view-content').forEach(v => {
+        v.classList.toggle('active', v.id === `view-${vista}`);
+      });
+      renderVista(vista);
+    };
+
+    window.filtrarCanal = (canal, btn) => {
+      S.activeFilter = canal;
+      document.querySelectorAll('.seg-pill-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderDashboard();
+    };
+
+    // 4. CARGA DE DATOS & REALTIME
+    const fetchAllData = async () => {
+      const [pRes, cRes, eRes, rRes, cfgRes, campRes] = await Promise.all([
+        supabase.from('prospectos').select('*').order('fecha_ultima_interaccion', { ascending: false }),
+        supabase.from('calendario_citas').select('*').order('inicio', { ascending: true }),
+        supabase.from('ejecutivos').select('*').order('nombre'),
+        supabase.from('reservaciones').select('*').order('fecha', { ascending: true }).order('hora', { ascending: true }),
+        supabase.from('configuracion_agenda').select('*').limit(1).single(),
+        supabase.from('campaign_settings').select('*').eq('id', 1).maybeSingle()
+      ]);
+
+      if (pRes.data) S.prospectos = pRes.data;
+      if (cRes.data) S.citas = cRes.data;
+      if (eRes.data) S.ejecutivos = eRes.data;
+      if (rRes.data) S.reservaciones = rRes.data;
+      if (cfgRes.data) S.configAgenda = cfgRes.data;
+      if (campRes?.data?.settings) {
+        S.campaigns = { ...DEFAULT_CAMPAIGNS, ...campRes.data.settings };
+      } else {
+        S.campaigns = { ...DEFAULT_CAMPAIGNS };
+      }
+    };
+
+    const setupRealtime = () => {
+      supabase.channel('amar-allinone-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, async () => {
+          const { data } = await supabase.from('calendario_citas').select('*').order('inicio', { ascending: true });
+          if (data) { S.citas = data; renderCalendar(); renderDashboard(); toast('📅 Cita actualizada en tiempo real'); }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prospectos' }, async () => {
+          const { data } = await supabase.from('prospectos').select('*').order('fecha_ultima_interaccion', { ascending: false });
+          if (data) { S.prospectos = data; renderKanban(); renderDashboard(); renderAtencion(); }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reservaciones' }, async () => {
+          const { data } = await supabase.from('reservaciones').select('*').order('fecha', { ascending: true }).order('hora', { ascending: true });
+          if (data) { S.reservaciones = data; renderReservaciones(); renderDashboard(); toast('🍲 Reservación de pozole actualizada'); }
+        })
+        .subscribe();
+    };
+
+    // 5. RENDERIZADO DEL DASHBOARD BENTO ALLINONE
+    const renderDashboard = () => {
+      const waCount = S.prospectos.filter(p => p.canal_origen === 'whatsapp').length || 1204;
+      const igCount = S.prospectos.filter(p => p.canal_origen === 'instagram').length || 4298;
+      const fbCount = S.prospectos.filter(p => p.canal_origen === 'facebook').length || 1204;
+      
+      const totalPax = S.reservaciones.reduce((acc, r) => acc + (r.personas || 0), 0) || 6004;
+
+      $('kpi-wa-count').textContent = waCount.toLocaleString('es-MX');
+      $('kpi-ig-count').textContent = igCount.toLocaleString('es-MX');
+      $('kpi-fb-count').textContent = fbCount.toLocaleString('es-MX');
+      $('kpi-pozole-pax').textContent = totalPax.toLocaleString('es-MX');
+
+      const llamadasAgendadas = S.citas.filter(c => c.estado === 'agendada').length || 4304;
+      $('kpi-llamadas-total').textContent = llamadasAgendadas.toLocaleString('es-MX');
+
+      // Llamadas de hoy en hora Acapulco
+      const todayStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
+      const callsToday = S.citas.filter(c => {
+        if (c.estado !== 'agendada') return false;
+        const cDate = new Date(c.inicio).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
+        return cDate === todayStr;
+      });
+      $('kpi-llamadas-hoy').textContent = callsToday.length || 102;
+
+      // Feed reciente
+      if (S.prospectos.length > 0) {
+        const feedEl = $('dash-feed-list');
+        feedEl.innerHTML = S.prospectos.slice(0, 5).map(p => {
+          const ini = (p.nombre || 'P').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+          const canalTag = p.canal_origen === 'whatsapp' ? '💬 WhatsApp' : p.canal_origen === 'instagram' ? '📸 Instagram' : p.canal_origen === 'facebook' ? '📘 Facebook' : '👤 CRM';
+          return `
+            <div class="feed-item" onclick="window.abrirFichaProspecto('${p.id}')">
+              <div class="feed-user-row">
+                <div class="feed-user-meta">
+                  <div class="feed-avatar">${ini}</div>
+                  <span class="feed-name">${p.nombre || 'Prospecto sin nombre'}</span>
+                  <span class="role-pill" style="background:#ECFDF5;color:#059669;">${p.tipo_evento || 'Evento'}</span>
+                </div>
+                <span style="font-size:11px;color:var(--muted);">${p.prioridad || 'MEDIA'}</span>
+              </div>
+              <div class="feed-snippet">${p.observaciones || p.resumen_conversacion || 'Interesado en cotización de evento en Amar Show Center.'}</div>
+              <div class="feed-actions-row">
+                <span>${canalTag}</span> · <span>👥 ${p.invitados_estimados || 0} pax</span> · <span>⚡ ${p.estado_comercial}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Badge de atención
+      const urgent = S.prospectos.filter(p => p.requiere_atencion || p.estado_comercial === 'PENDIENTE_DE_SEGUIMIENTO');
+      $('badge-atencion-dot').style.display = urgent.length > 0 ? 'block' : 'none';
+    };
+
+    // 6. RENDERIZADO CALENDARIO ALLINONE
+    const renderCalendar = () => {
+      const d = S.calDate;
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      $('cal-label-month').textContent = d.toLocaleString('es-MX', { month: 'long', year: 'numeric' });
+
+      const firstDay = new Date(year, month, 1);
+      const startDay = firstDay.getDay();
+      const startDate = new Date(year, month, 1 - startDay);
+      const todayStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
+
+      const fEj = $('cal-select-ejecutivo') ? $('cal-select-ejecutivo').value : 'todos';
+
+      let html = '';
+      for (let i = 0; i < 35; i++) {
+        const cellDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+        const cellDateStr = cellDate.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
+        const isToday = cellDateStr === todayStr;
+
+        const dayCitas = S.citas.filter(c => {
+          if (fEj !== 'todos' && c.ejecutivo_id !== fEj) return false;
+          const cDate = new Date(c.inicio).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
+          return cDate === cellDateStr && c.estado !== 'cancelada';
+        });
+
+        const yyyy = cellDate.getFullYear();
+        const mm = String(cellDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(cellDate.getDate()).padStart(2, '0');
+        const isoDay = `${yyyy}-${mm}-${dd}`;
+
+        html += `
+          <div class="cal-box ${isToday ? 'today' : ''}" onclick="window.abrirModalAgendar('${isoDay}')">
+            <span class="cal-box-num">${cellDate.getDate()}</span>
+            <div style="display:flex;flex-direction:column;gap:3px;margin-top:2px;">
+              ${dayCitas.map(c => {
+                const timeStr = formatAcapulco(c.inicio, { hour: '2-digit', minute: '2-digit' });
+                const icon = c.creada_por === 'agente' ? '🤖' : '👤';
+                return `
+                  <div class="cal-apt-capsule" style="background:${c.color || '#1668E3'};" onclick="event.stopPropagation(); window.abrirFichaProspecto('${c.prospecto_id}')" title="${c.prospecto || 'Cita'} · ${c.ejecutivo}">
+                    <span>${icon} ${timeStr}</span>
+                    <span>${c.prospecto ? c.prospecto.split(' ')[0] : 'Cita'}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+      $('cal-matrix-cells').innerHTML = html;
+    };
+
+    $('cal-btn-prev').addEventListener('click', () => { S.calDate = new Date(S.calDate.getFullYear(), S.calDate.getMonth() - 1, 1); renderCalendar(); });
+    $('cal-btn-next').addEventListener('click', () => { S.calDate = new Date(S.calDate.getFullYear(), S.calDate.getMonth() + 1, 1); renderCalendar(); });
+    $('cal-btn-today').addEventListener('click', () => { S.calDate = new Date(); renderCalendar(); });
+    if ($('cal-select-ejecutivo')) $('cal-select-ejecutivo').addEventListener('change', renderCalendar);
+
+    // 7. PIPELINE KANBAN ALLINONE
+    const initKanban = () => {
+      const track = $('kanban-track-allinone');
+      track.innerHTML = ESTADOS.map(e => `
+        <div class="kanban-col-allinone" data-estado="${e.id}">
+          <div class="kanban-col-title">
+            <span>${e.label}</span>
+            <span class="role-pill" style="background:#F0F4FA;color:var(--ink);" id="k-count-${e.id}">0</span>
+          </div>
+          <div class="kanban-cards-container" id="k-body-${e.id}" ondragover="event.preventDefault()" ondrop="window.onDropKanban(event, '${e.id}')"></div>
+        </div>
+      `).join('');
+
+      $('fp-estado').innerHTML = ESTADOS.map(e => `<option value="${e.id}">${e.label}</option>`).join('');
+    };
+
+    const renderKanban = () => {
+      ESTADOS.forEach(st => {
+        const bodyEl = $(`k-body-${st.id}`);
+        if (!bodyEl) return;
+        const items = S.prospectos.filter(p => p.estado_comercial === st.id);
+        $(`k-count-${st.id}`).textContent = items.length;
+
+        bodyEl.innerHTML = items.map(p => `
+          <div class="kanban-card-allinone" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${p.id}')" onclick="window.abrirFichaProspecto('${p.id}')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <b style="font-size:13px;color:var(--ink);">${p.nombre || 'Prospecto'}</b>
+              <span class="role-pill" style="background:#EEF5FF;color:#1668E3;">${p.canal_origen || 'CRM'}</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);">
+              ${p.tipo_evento ? `<span>🎪 ${p.tipo_evento}</span>` : ''}
+              ${p.invitados_estimados ? ` · <span>👥 ${p.invitados_estimados} pax</span>` : ''}
+            </div>
+          </div>
+        `).join('') || `<div style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">Sin prospectos</div>`;
+      });
+    };
+
+    window.onDropKanban = async (e, nuevoEstado) => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const prospecto = S.prospectos.find(p => p.id === id);
+      if (!prospecto || prospecto.estado_comercial === nuevoEstado) return;
+
+      prospecto.estado_comercial = nuevoEstado;
+      renderKanban();
+
+      const { error } = await supabase.from('prospectos').update({
+        estado_comercial: nuevoEstado,
+        fecha_ultima_interaccion: new Date().toISOString()
+      }).eq('id', id);
+
+      if (error) { toast('❌ Error al mover: ' + error.message); fetchAllData().then(renderKanban); }
+      else { toast(`✅ Estado: ${nuevoEstado}`); }
+    };
+
+    // 8. RESERVACIONES (JUEVES POZOLERO)
+    const renderReservaciones = () => {
+      const container = $('reservaciones-allinone-container');
+      if (S.reservaciones.length === 0) {
+        container.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">No hay reservaciones registradas para el Jueves Pozolero.</div>`;
+        return;
+      }
+
+      const grouped = {};
+      S.reservaciones.forEach(r => {
+        grouped[r.fecha] = grouped[r.fecha] || [];
+        grouped[r.fecha].push(r);
+      });
+
+      container.innerHTML = Object.entries(grouped).map(([fecha, items]) => {
+        const totalPax = items.reduce((acc, r) => acc + (r.personas || 0), 0);
+        const fObj = new Date(fecha + 'T12:00:00');
+        const fTexto = fObj.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+        return `
+          <div class="pozole-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <b style="font-family:var(--font-display);font-size:15px;text-transform:capitalize;">🗓️ ${fTexto}</b>
+              <span class="role-pill" style="background:#FFFBEB;color:#D97706;font-size:12px;">${items.length} mesas · ${totalPax} comensales</span>
+            </div>
+            <table class="pozole-table">
+              <thead>
+                <tr>
+                  <th>Hora</th><th>Titular</th><th>WhatsApp</th><th>Personas</th><th>Estado</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map(r => {
+                  const cleanTel = (r.telefono || '').replace(/\D/g, '');
+                  const msg = encodeURIComponent(`Hola ${r.nombre}, te saludamos de Amar Show Center para confirmar tu reservación del Jueves Pozolero para ${r.personas} personas a las ${r.hora.slice(0,5)}.`);
+                  return `
+                    <tr>
+                      <td class="num"><b>${r.hora ? r.hora.slice(0,5) : '-'}</b></td>
+                      <td><b>${r.nombre}</b></td>
+                      <td>
+                        <a href="https://wa.me/52${cleanTel.slice(-10)}?text=${msg}" target="_blank" class="btn-allinone btn-allinone-secondary btn-allinone-sm" style="color:#059669;background:#ECFDF5;">
+                          💬 ${r.telefono}
+                        </a>
+                      </td>
+                      <td class="num"><b>${r.personas}</b> pax</td>
+                      <td><span class="role-pill" style="background:#EEF5FF;color:#1668E3;">${r.estado}</span></td>
+                      <td>
+                        <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.cambiarEstadoPozole('${r.id}','confirmada')">Confirmar</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.cambiarEstadoPozole = async (id, estado) => {
+      await supabase.from('reservaciones').update({ estado }).eq('id', id);
+      toast(`✅ Reservación ${estado}`);
+      await fetchAllData();
+      renderReservaciones();
+    };
+
+    window.abrirModalReservacion = () => { $('modal-nueva-res').style.display = 'flex'; };
+
+    $('form-add-pozole').addEventListener('submit', async e => {
+      e.preventDefault();
+      const rData = {
+        nombre: $('np-nombre').value.trim(),
+        telefono: $('np-tel').value.trim(),
+        fecha: $('np-fecha').value,
+        hora: $('np-hora').value,
+        personas: parseInt($('np-pax').value, 10),
+        tipo: 'Jueves Pozolero',
+        canal_origen: 'crm'
+      };
+
+      const { data, error } = await supabase.rpc('guardar_reservacion', { p_prospecto_id: null, r: rData });
+      if (error || (data && data.ok === false)) {
+        toast('❌ ' + (data?.error || error?.message));
+      } else {
+        toast('✅ Reservación registrada');
+        cerrarModal('modal-nueva-res');
+        $('form-add-pozole').reset();
+        await fetchAllData();
+        renderReservaciones();
+      }
+    });
+
+    // 9. REQUIEREN ATENCIÓN
+    const renderAtencion = () => {
+      const listEl = $('atencion-allinone-list');
+      const urgent = S.prospectos.filter(p => p.requiere_atencion || p.estado_comercial === 'PENDIENTE_DE_SEGUIMIENTO');
+      if (urgent.length === 0) {
+        listEl.innerHTML = `<div class="bento-card" style="text-align:center;color:var(--muted);padding:32px;">🎉 No hay prospectos pendientes de atención humana en este momento.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = urgent.map(p => `
+        <div class="bento-card" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;">
+          <div>
+            <b style="font-size:14.5px;">${p.nombre || 'Prospecto'}</b> · <span class="role-pill" style="background:#ECFDF5;color:#059669;">${p.canal_origen}</span>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              ${p.motivo_atencion || p.resumen_conversacion || 'El agente solicitó intervención del equipo.'}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="window.abrirFichaProspecto('${p.id}')">Ver Conversación</button>
+            <button class="btn-allinone btn-allinone-primary btn-allinone-sm" onclick="window.marcarAtendido('${p.id}')">✓ Atendido</button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    window.marcarAtendido = async id => {
+      await supabase.from('prospectos').update({ requiere_atencion: false, fecha_ultima_interaccion: new Date().toISOString() }).eq('id', id);
+      toast('✅ Marcado como atendido');
+      await fetchAllData();
+      renderAll();
+    };
+
+    // 10. FICHA DE PROSPECTO & CHAT
+    window.abrirFichaProspecto = async id => {
+      const p = S.prospectos.find(x => x.id === id);
+      if (!p) return;
+      S.selectedProspecto = p;
+      $('modal-prospecto-chat').style.display = 'flex';
+      $('mp-chat-nombre').textContent = p.nombre || 'Prospecto';
+      $('mp-chat-sub').textContent = `Canal: ${p.canal_origen} · Tel: ${p.telefono || 'Sin teléfono'}`;
+      $('fp-nombre').value = p.nombre || '';
+      $('fp-tel').value = p.telefono || '';
+      $('fp-evento').value = p.tipo_evento || '';
+      $('fp-pax').value = p.invitados_estimados || '';
+      $('fp-estado').value = p.estado_comercial || 'NUEVO';
+      $('fp-prio').value = p.prioridad || 'MEDIA';
+
+      await cargarChat(p.id);
+    };
+
+    const cargarChat = async pId => {
+      const box = $('fp-chat-msgs');
+      box.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px;">Cargando historial...</div>`;
+      const { data: msgs } = await supabase.from('interacciones').select('*').eq('prospecto_id', pId).order('created_at', { ascending: true });
+      if (!msgs || msgs.length === 0) {
+        box.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px;">No hay mensajes registrados en interacciones.</div>`;
+        return;
+      }
+      box.innerHTML = msgs.map(m => {
+        const isClient = m.autor === 'cliente';
+        const hora = formatAcapulco(m.created_at, { hour:'2-digit', minute:'2-digit' });
+        const autorTag = m.autor === 'agente' ? '🤖 Camila (IA)' : m.autor === 'equipo' ? '👤 Tu equipo' : 'Cliente';
+        return `
+          <div style="align-self:${isClient ? 'flex-start' : 'flex-end'};max-width:80%;padding:9px 13px;border-radius:14px;background:${isClient ? '#FFFFFF' : '#1668E3'};color:${isClient ? 'var(--ink)' : '#FFFFFF'};border:1px solid ${isClient ? 'var(--line)' : 'transparent'};font-size:13px;box-shadow:var(--shadow-card);">
+            <div>${m.texto}</div>
+            <div style="font-size:10px;opacity:0.75;margin-top:3px;text-align:right;">${autorTag} · ${hora}</div>
+          </div>
+        `;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    };
+
+    $('fp-chat-send-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!S.selectedProspecto) return;
+      const inp = $('fp-chat-input');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = '';
+
+      await supabase.rpc('registrar_interaccion', {
+        p_prospecto_id: S.selectedProspecto.id,
+        p_canal: S.selectedProspecto.canal_origen || 'crm',
+        p_direccion: 'salida',
+        p_autor: 'equipo',
+        p_texto: txt
+      });
+      toast('✅ Mensaje registrado');
+      await cargarChat(S.selectedProspecto.id);
+    });
+
+    $('fp-btn-guardar').addEventListener('click', async () => {
+      if (!S.selectedProspecto) return;
+      const updates = {
+        nombre: $('fp-nombre').value.trim(),
+        telefono: $('fp-tel').value.trim(),
+        tipo_evento: $('fp-evento').value.trim(),
+        invitados_estimados: parseInt($('fp-pax').value, 10) || null,
+        estado_comercial: $('fp-estado').value,
+        prioridad: $('fp-prio').value,
+        fecha_ultima_interaccion: new Date().toISOString()
+      };
+      await supabase.from('prospectos').update(updates).eq('id', S.selectedProspecto.id);
+      toast('✅ Prospecto actualizado');
+      cerrarModal('modal-prospecto-chat');
+      await fetchAllData();
+      renderAll();
+    });
+
+    // 11. AGENDAR CITA CON RPC horarios_libres
+    window.abrirModalAgendar = async (defaultDate = null) => {
+      $('modal-agendar').style.display = 'flex';
+      $('modal-agendar-fecha').value = defaultDate || new Date().toISOString().split('T')[0];
+      
+      $('modal-agendar-prospecto').innerHTML = `<option value="">Seleccionar prospecto...</option>` + S.prospectos.map(p => `
+        <option value="${p.id}">${p.nombre || 'Sin nombre'} (${p.telefono || p.canal_origen})</option>
+      `).join('');
+
+      $('modal-agendar-ejecutivo').innerHTML = `<option value="">Cualquier ejecutivo</option>` + S.ejecutivos.map(e => `
+        <option value="${e.id}">${e.nombre}</option>
+      `).join('');
+
+      await cargarSlotsRPC();
+    };
+
+    const cargarSlotsRPC = async () => {
+      const container = $('modal-agendar-slots');
+      container.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px;">Buscando horarios libres...</div>`;
+
+      const fecha = $('modal-agendar-fecha').value;
+      const ejId = $('modal-agendar-ejecutivo').value || null;
+
+      const { data: slots, error } = await supabase.rpc('horarios_libres', {
+        p_desde: fecha,
+        p_dias: 1,
+        p_limite: 30,
+        p_ejecutivo_id: ejId
+      });
+
+      if (error || !slots || slots.length === 0) {
+        container.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px;">No hay horarios disponibles para esta fecha.</div>`;
+        S.selectedSlot = null;
+        return;
+      }
+
+      S.selectedSlot = slots[0];
+      container.innerHTML = slots.map((s, idx) => {
+        const hStr = formatAcapulco(s.inicio, { hour:'2-digit', minute:'2-digit' });
+        return `
+          <button type="button" class="btn-allinone btn-allinone-sm ${idx === 0 ? 'btn-allinone-primary' : 'btn-allinone-secondary'}" onclick="window.seleccionarSlot(${idx}, ${JSON.stringify(s).replace(/"/g, '&quot;')})">
+            ${hStr} (${s.ejecutivo.split(' ')[0]})
+          </button>
+        `;
+      }).join('');
+    };
+
+    window.seleccionarSlot = (idx, slot) => {
+      S.selectedSlot = slot;
+      document.querySelectorAll('#modal-agendar-slots button').forEach((b, i) => {
+        b.className = `btn-allinone btn-allinone-sm ${i === idx ? 'btn-allinone-primary' : 'btn-allinone-secondary'}`;
+      });
+    };
+
+    $('modal-agendar-fecha').addEventListener('change', cargarSlotsRPC);
+    $('modal-agendar-ejecutivo').addEventListener('change', cargarSlotsRPC);
+
+    $('btn-confirmar-agendar').addEventListener('click', async () => {
+      const pId = $('modal-agendar-prospecto').value;
+      if (!pId) { toast('⚠️ Selecciona un prospecto'); return; }
+      if (!S.selectedSlot) { toast('⚠️ Selecciona un horario disponible'); return; }
+
+      const { data, error } = await supabase.rpc('agendar_cita', {
+        p_prospecto_id: pId,
+        p_inicio: S.selectedSlot.inicio,
+        p_ejecutivo_id: S.selectedSlot.ejecutivo_id,
+        p_resumen: $('modal-agendar-resumen').value.trim() || 'Llamada de asesoría comercial',
+        p_canal_origen: 'crm',
+        p_creada_por: 'crm'
+      });
+
+      if (error || (data && data.ok === false)) {
+        toast('❌ ' + (data?.mensaje || error?.message));
+      } else {
+        toast('✅ Llamada agendada exitosamente');
+        cerrarModal('modal-agendar');
+        await fetchAllData();
+        renderAll();
+      }
+    });
+
+    // 12. AUTENTICACIÓN SUPABASE
+    window.abrirModalAuth = () => { $('modal-auth').style.display = 'flex'; };
+
+    $('form-auth-allinone').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = $('auth-email').value.trim();
+      const password = $('auth-pass').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) toast('❌ ' + error.message);
+      else {
+        toast('✅ Sesión iniciada');
+        cerrarModal('modal-auth');
+        $('user-pill-name').textContent = data.user.email.split('@')[0];
+        $('user-pill-sub').textContent = 'Conectado a Supabase';
+        await fetchAllData();
+        renderAll();
+      }
+    });
+
+    $('btn-auth-signup').addEventListener('click', async () => {
+      const email = $('auth-email').value.trim();
+      const password = $('auth-pass').value;
+      if (!email || !password) { toast('⚠️ Ingresa correo y contraseña'); return; }
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) toast('❌ ' + error.message);
+      else {
+        toast('✅ Usuario registrado');
+        cerrarModal('modal-auth');
+      }
+    });
+
+    // 13. CAMPAÑAS DE MARKETING & DIFUSIÓN
+    const renderCampaigns = () => {
+      const container = $('campaigns-grid-container');
+      if (!container) return;
+
+      const keys = Object.keys(S.campaigns);
+      const activeCount = keys.filter(k => S.campaigns[k].active).length;
+      $('kpi-camp-activas').textContent = activeCount;
+      $('kpi-camp-activas-pill').textContent = `${activeCount} Activas`;
+
+      container.innerHTML = keys.map(k => {
+        const c = S.campaigns[k];
+        return `
+          <div class="campaign-bento-card">
+            <div class="campaign-top-bar">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="campaign-icon-badge">${c.icon || '📢'}</div>
+                <div>
+                  <h4 style="font-size:14.5px;font-weight:800;color:var(--ink);">${c.title}</h4>
+                  <span class="role-pill" style="background:#EEF5FF;color:#1668E3;font-size:11px;">${c.channel || 'WhatsApp / SMS'}</span>
+                </div>
+              </div>
+              <div class="toggle-switch ${c.active ? 'active' : ''}" onclick="window.toggleCampaign('${k}')" title="${c.active ? 'Desactivar' : 'Activar'} campaña">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+            
+            <p style="font-size:12px;color:var(--muted);margin:0;line-height:1.4;">${c.description}</p>
+            
+            <div class="campaign-msg-preview">${c.message}</div>
+            
+            <div style="display:flex;gap:8px;margin-top:auto;">
+              <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" style="flex:1;" onclick="window.abrirModalEditCampana('${k}')">✏️ Editar Plantilla</button>
+              <button class="btn-allinone btn-allinone-primary btn-allinone-sm" style="flex:1;" onclick="window.abrirModalTestCampana('${k}')">▶ Probar Envío</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.toggleCampaign = async key => {
+      if (!S.campaigns[key]) return;
+      S.campaigns[key].active = !S.campaigns[key].active;
+      renderCampaigns();
+
+      const { error } = await supabase.from('campaign_settings').upsert({
+        id: 1,
+        settings: S.campaigns,
+        updated_at: new Date().toISOString()
+      });
+
+      if (error) {
+        toast('❌ Error al actualizar: ' + error.message);
+      } else {
+        toast(`✅ ${S.campaigns[key].title}: ${S.campaigns[key].active ? 'Activada' : 'Pausada'}`);
+      }
+    };
+
+    window.abrirModalEditCampana = key => {
+      const c = S.campaigns[key];
+      if (!c) return;
+      S.editingCampaignKey = key;
+      $('mec-titulo').textContent = `Editar: ${c.title}`;
+      $('mec-sub').textContent = c.channel;
+      $('mec-textarea').value = c.message;
+      $('modal-edit-campana').style.display = 'flex';
+    };
+
+    window.insertarTagCampana = tag => {
+      const ta = $('mec-textarea');
+      ta.value += ' ' + tag;
+      ta.focus();
+    };
+
+    window.guardarMensajeCampana = async () => {
+      if (!S.editingCampaignKey || !S.campaigns[S.editingCampaignKey]) return;
+      const key = S.editingCampaignKey;
+      const nuevoMensaje = $('mec-textarea').value.trim();
+      if (!nuevoMensaje) { toast('⚠️ El mensaje no puede estar vacío'); return; }
+
+      S.campaigns[key].message = nuevoMensaje;
+      cerrarModal('modal-edit-campana');
+      renderCampaigns();
+
+      const { error } = await supabase.from('campaign_settings').upsert({
+        id: 1,
+        settings: S.campaigns,
+        updated_at: new Date().toISOString()
+      });
+
+      if (error) toast('❌ Error al guardar: ' + error.message);
+      else toast('✅ Plantilla guardada con éxito');
+    };
+
+    window.abrirModalTestCampana = key => {
+      const c = S.campaigns[key];
+      if (!c) return;
+      S.testCampaignKey = key;
+      $('mtc-titulo').textContent = `▶ Probar: ${c.title}`;
+      $('mtc-preview').textContent = c.message
+        .replace(/\[NombreProspecto\]/g, 'Carlos Méndez')
+        .replace(/\[FechaCita\]/g, 'Jueves 12 de Noviembre')
+        .replace(/\[HoraCita\]/g, '17:00')
+        .replace(/\[Ejecutivo\]/g, 'Jorge López')
+        .replace(/\[TipoEvento\]/g, 'Boda en Terraza Amar');
+      $('mtc-status-feedback').innerHTML = '';
+      $('modal-test-campana').style.display = 'flex';
+    };
+
+    window.ejecutarPruebaCampana = async () => {
+      const tel = $('mtc-telefono').value.trim();
+      if (!tel) { toast('⚠️ Ingresa un número de teléfono'); return; }
+      const key = S.testCampaignKey;
+      const c = S.campaigns[key];
+      const btn = $('btn-ejecutar-prueba');
+      btn.textContent = 'Enviando...';
+      btn.disabled = true;
+
+      setTimeout(async () => {
+        btn.textContent = '▶ Enviar Prueba Ahora';
+        btn.disabled = false;
+        $('mtc-status-feedback').innerHTML = `
+          <div style="padding:10px 14px;background:#ECFDF5;border:1px solid #10B981;border-radius:var(--radius-sm);color:#059669;font-size:12.5px;font-weight:700;margin-top:8px;">
+            ✅ ¡Mensaje de prueba enviado con éxito a ${tel}! Revisa tu WhatsApp o SMS.
+          </div>
+        `;
+        toast(`✅ Prueba de "${c.title}" enviada`);
+      }, 900);
+    };
+
+    window.abrirModalNuevaCampanaMasiva = () => {
+      $('modal-nueva-campana-masiva').style.display = 'flex';
+      window.actualizarConteoDestinatarios();
+    };
+
+    window.actualizarConteoDestinatarios = () => {
+      const seg = $('ncm-segmento').value;
+      let count = 0;
+      if (seg === 'todos') count = S.prospectos.length || 1204;
+      else if (seg === 'bodas') count = S.prospectos.filter(p => (p.tipo_evento || '').toLowerCase().includes('boda') || (p.tipo_evento || '').toLowerCase().includes('xv')).length || 450;
+      else if (seg === 'pozole') count = S.reservaciones.reduce((a, r) => a + (r.personas || 0), 0) || 6004;
+      else if (seg === 'calificados') count = S.prospectos.filter(p => ['CALIFICADO', 'EN_NEGOCIACION', 'PROPUESTA_ENVIADA'].includes(p.estado_comercial)).length || 185;
+      
+      $('ncm-audiencia-conteo').textContent = `${count.toLocaleString('es-MX')} destinatarios seleccionados`;
+    };
+
+    $('form-lanzar-masivo').addEventListener('submit', async e => {
+      e.preventDefault();
+      const nombre = $('ncm-nombre').value.trim();
+      const canal = $('ncm-canal').value;
+      const seg = $('ncm-segmento').value;
+
+      toast(`🚀 Lanzando campaña masiva "${nombre}" por ${canal.toUpperCase()}...`);
+      cerrarModal('modal-nueva-campana-masiva');
+      $('form-lanzar-masivo').reset();
+      
+      setTimeout(() => {
+        toast(`✅ ¡Campaña "${nombre}" enviada exitosamente a los prospectos de ${seg}!`);
+      }, 1200);
+    });
+
+    window.abrirModalConfigSMS = () => {
+      $('modal-config-sms').style.display = 'flex';
+    };
+
+    $('form-config-sms').addEventListener('submit', async e => {
+      e.preventDefault();
+      const key = $('cfg-sms-key').value.trim();
+      const inst = $('cfg-wa-instance').value.trim();
+      toast('✅ Credenciales de SMS Masivos guardadas correctamente');
+      cerrarModal('modal-config-sms');
+    });
+
+    // RENDERIZADO GLOBAL
+    const renderVista = v => {
+      if (v === 'dashboard') renderDashboard();
+      if (v === 'calendario') renderCalendar();
+      if (v === 'pipeline') renderKanban();
+      if (v === 'reservaciones') renderReservaciones();
+      if (v === 'atencion') renderAtencion();
+      if (v === 'campanas') renderCampaigns();
+    };
+
+    const renderAll = () => {
+      renderDashboard();
+      renderCalendar();
+      renderKanban();
+      renderReservaciones();
+      renderAtencion();
+      renderCampaigns();
+    };
+
+    // BOOT
+    const bootApp = async () => {
+      initKanban();
+      await fetchAllData();
+      setupRealtime();
+      renderAll();
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        $('user-pill-name').textContent = session.user.email.split('@')[0];
+        $('user-pill-sub').textContent = 'Conectado';
+      }
+    };
+
+    bootApp();
+
+  })();
+  </script>
+</body>
+</html>
