@@ -1885,11 +1885,11 @@
 
     // 5. RENDERIZADO DEL DASHBOARD BENTO ALLINONE
     const renderDashboard = () => {
-      const waCount = S.prospectos.filter(p => p.canal_origen === 'whatsapp').length || 1204;
-      const igCount = S.prospectos.filter(p => p.canal_origen === 'instagram').length || 4298;
-      const fbCount = S.prospectos.filter(p => p.canal_origen === 'facebook').length || 1204;
+      const waCount = S.prospectos.filter(p => p.canal_origen === 'whatsapp').length;
+      const igCount = S.prospectos.filter(p => p.canal_origen === 'instagram').length;
+      const fbCount = S.prospectos.filter(p => p.canal_origen === 'facebook').length;
       
-      const totalPax = S.reservaciones.reduce((acc, r) => acc + (r.personas || 0), 0) || 6004;
+      const totalPax = S.reservaciones.reduce((acc, r) => acc + (r.personas || 0), 0);
 
       $('kpi-wa-count').textContent = waCount.toLocaleString('es-MX');
       $('kpi-ig-count').textContent = igCount.toLocaleString('es-MX');
@@ -2052,6 +2052,16 @@
     };
 
     // 8. RESERVACIONES (JUEVES POZOLERO)
+    const redSocial = (canal) => {
+      const c = String(canal || '').toLowerCase();
+      const m = {
+        facebook:  ['📘 Facebook',  '#EEF5FF', '#1668E3'],
+        instagram: ['📸 Instagram', '#FDF2F8', '#C026D3'],
+        whatsapp:  ['💬 WhatsApp',  '#ECFDF5', '#059669'],
+      }[c] || ['👤 CRM', '#F3F4F6', '#4B5563'];
+      return `<span class="role-pill" style="background:${m[1]};color:${m[2]};white-space:nowrap;">${m[0]}</span>`;
+    };
+
     const renderReservaciones = () => {
       const container = $('reservaciones-allinone-container');
       if (S.reservaciones.length === 0) {
@@ -2079,7 +2089,7 @@
             <table class="pozole-table">
               <thead>
                 <tr>
-                  <th>Hora</th><th>Titular</th><th>WhatsApp</th><th>Personas</th><th>Estado</th><th>Acciones</th>
+                  <th>Hora</th><th>Titular</th><th>Red social</th><th>WhatsApp</th><th>Personas</th><th>Estado</th><th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -2090,6 +2100,7 @@
                     <tr>
                       <td class="num"><b>${r.hora ? r.hora.slice(0,5) : '-'}</b></td>
                       <td><b>${r.nombre}</b></td>
+                      <td>${redSocial(r.canal_origen)}</td>
                       <td>
                         <a href="https://wa.me/52${cleanTel.slice(-10)}?text=${msg}" target="_blank" class="btn-allinone btn-allinone-secondary btn-allinone-sm" style="color:#059669;background:#ECFDF5;">
                           💬 ${r.telefono}
@@ -2559,15 +2570,16 @@
     // BOOT
     const bootApp = async () => {
       initKanban();
-      await fetchAllData();
-      setupRealtime();
-      renderAll();
-
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         $('user-pill-name').textContent = session.user.email.split('@')[0];
         $('user-pill-sub').textContent = 'Conectado';
       }
+      await fetchAllData();
+      setupRealtime();
+      renderAll();
+      // Sin sesión, Supabase no entrega datos (seguridad): pedimos iniciar sesión.
+      if (!session) window.abrirModalAuth();
     };
 
     bootApp();
