@@ -1373,15 +1373,15 @@
             </div>
           </div>
 
-          <div class="bento-card">
+          <div class="bento-card" style="cursor:pointer;" onclick="window.abrirModalConfigSMS()" title="Click para ver configuración y saldo">
             <div class="bento-card-header">
-              <span style="font-size:13px;font-weight:700;color:var(--muted);">Tasa de Entrega</span>
-              <span class="trend-pill up">↗ 99.2%</span>
+              <span style="font-size:13px;font-weight:700;color:var(--muted);">SMS Masivos · Saldo</span>
+              <span class="trend-pill up" id="kpi-sms-status-pill">13 Créditos</span>
             </div>
             <div class="bento-card-body">
               <div>
-                <div class="metric-number num">99.2%</div>
-                <div class="metric-caption">SMS & WhatsApp</div>
+                <div class="metric-number num" id="kpi-sms-credits">13.00</div>
+                <div class="metric-caption">Créditos disponibles (SMS & WA)</div>
               </div>
               <div class="mini-bars-group">
                 <span class="mini-bar active" style="height:38px;background:var(--green);"></span>
@@ -1532,6 +1532,12 @@
           <div class="form-grp"><label>Personas</label><input type="number" id="np-pax" class="form-ctrl" min="1" max="50" value="4" required></div>
         </div>
         <div class="form-grp"><label>Notas / Ubicación de mesa</label><textarea id="np-notas" class="form-ctrl" rows="2" placeholder="Cerca del escenario, cumpleaños..."></textarea></div>
+        <div style="margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#059669;cursor:pointer;">
+            <input type="checkbox" id="np-enviar-wa" checked>
+            <span>💬 Enviar confirmación automática por WhatsApp (SMS Masivos)</span>
+          </label>
+        </div>
         <div class="modal-foot" style="margin:-24px;margin-top:0;">
           <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-nueva-res')">Cancelar</button>
           <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">Guardar Reservación</button>
@@ -1612,9 +1618,19 @@
         <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-test-campana')">✕</button>
       </div>
       <div class="modal-body">
-        <div class="form-grp">
-          <label>Teléfono para la prueba (WhatsApp / SMS)</label>
-          <input type="tel" id="mtc-telefono" class="form-ctrl" placeholder="7441234567" required>
+        <div class="form-row">
+          <div class="form-grp" style="flex:1;">
+            <label>Teléfono para la prueba (10 dígitos)</label>
+            <input type="tel" id="mtc-telefono" class="form-ctrl" placeholder="7441234567" required>
+          </div>
+          <div class="form-grp" style="flex:1;">
+            <label>Canal de Envío</label>
+            <select id="mtc-canal" class="form-ctrl">
+              <option value="whatsapp">💬 WhatsApp (SMS Masivos)</option>
+              <option value="sms">📱 SMS Masivo Tradicional</option>
+              <option value="auto">⚡ Automático (WhatsApp / Fallback SMS)</option>
+            </select>
+          </div>
         </div>
         <div class="form-grp">
           <label>Vista previa del mensaje a enviar</label>
@@ -1694,15 +1710,22 @@
         <button class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-config-sms')">✕</button>
       </div>
       <form id="form-config-sms" class="modal-body">
+        <div id="cfg-sms-credits-badge" style="padding:10px 14px;background:#ECFDF5;border:1px solid #10B981;border-radius:var(--radius-sm);color:#059669;font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:space-between;">
+          <span>🟢 Conectado con SMS Masivos</span>
+          <span id="cfg-sms-credits-num">13.00 Créditos</span>
+        </div>
         <div class="form-grp">
           <label>SMS Masivos API Key</label>
-          <input type="password" id="cfg-sms-key" class="form-ctrl" placeholder="apikey-xxxxxxxx">
+          <input type="text" id="cfg-sms-key" class="form-ctrl" placeholder="apikey-xxxxxxxx" value="4272002b8a218faa777e3fd9b7aac07f40c40cfc">
         </div>
         <div class="form-grp">
-          <label>WhatsApp Instance ID (opcional)</label>
-          <input type="text" id="cfg-wa-instance" class="form-ctrl" placeholder="Instancia para envío por WhatsApp">
+          <label>WhatsApp Instance ID</label>
+          <input type="text" id="cfg-wa-instance" class="form-ctrl" placeholder="Instancia para envío por WhatsApp" value="irbj0fq0-87gb-vgvo-slds-h09p35skot74">
         </div>
-        <p style="font-size:12px;color:var(--muted);">Estas credenciales se sincronizan con la tabla `campaign_settings` de tu Supabase oficial.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:-6px;margin-bottom:8px;">
+          <span style="font-size:11.5px;color:var(--muted);">Sincronizado con Supabase y Vercel API.</span>
+          <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" style="font-size:11.5px;padding:4px 10px;" onclick="window.consultarCreditosSMS(true)">🔄 Verificar Saldo</button>
+        </div>
         <div class="modal-foot" style="margin:-24px;margin-top:0;">
           <button type="button" class="btn-allinone btn-allinone-secondary btn-allinone-sm" onclick="cerrarModal('modal-config-sms')">Cancelar</button>
           <button type="submit" class="btn-allinone btn-allinone-primary btn-allinone-sm">Guardar Credenciales</button>
@@ -1900,6 +1923,12 @@
         }
       } else {
         S.campaigns = { ...DEFAULT_CAMPAIGNS };
+      }
+      if (!S.campaigns._sms_credentials) {
+        S.campaigns._sms_credentials = {
+          api_key: '4272002b8a218faa777e3fd9b7aac07f40c40cfc',
+          instance_id: 'irbj0fq0-87gb-vgvo-slds-h09p35skot74'
+        };
       }
     };
 
@@ -2366,6 +2395,20 @@
         toast('❌ ' + (data?.error || error?.message));
       } else {
         toast('✅ Reservación registrada');
+        if ($('np-enviar-wa') && $('np-enviar-wa').checked && rData.telefono) {
+          const endpoint = window.location.origin.startsWith('http') ? '/api/send-message' : 'https://amar-show-center-crm.vercel.app/api/send-message';
+          fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: rData.telefono,
+              message: `¡Hola ${rData.nombre}! Tu reservación para el Jueves Pozolero en Amar Show Center Acapulco ha sido confirmada para el ${rData.fecha} a las ${rData.hora} (${rData.personas} comensales). ¡Te esperamos frente al mar!`,
+              channel: 'whatsapp'
+            })
+          }).then(r => r.json()).then(res => {
+            if (res.success) toast(`💬 Confirmación enviada a ${rData.nombre} vía WhatsApp`);
+          }).catch(console.error);
+        }
         cerrarModal('modal-nueva-res');
         $('form-add-pozole').reset();
         await fetchAllData();
@@ -2600,7 +2643,7 @@
       const container = $('campaigns-grid-container');
       if (!container) return;
 
-      const keys = Object.keys(S.campaigns);
+      const keys = Object.keys(S.campaigns).filter(k => !k.startsWith('_'));
       const activeCount = keys.filter(k => S.campaigns[k].active).length;
       $('kpi-camp-activas').textContent = activeCount;
       $('kpi-camp-activas-pill').textContent = `${activeCount} Activas`;
@@ -2633,6 +2676,27 @@
           </div>
         `;
       }).join('');
+
+      window.consultarCreditosSMS();
+    };
+
+    window.consultarCreditosSMS = async (mostrarToast = false) => {
+      try {
+        const endpoint = window.location.origin.startsWith('http')
+          ? '/api/send-message?action=credits'
+          : 'https://amar-show-center-crm.vercel.app/api/send-message?action=credits';
+        const res = await fetch(endpoint);
+        const data = await res.json();
+        if (data.success && data.credit) {
+          const num = parseFloat(data.credit).toFixed(2);
+          if ($('kpi-sms-credits')) $('kpi-sms-credits').textContent = num;
+          if ($('kpi-sms-status-pill')) $('kpi-sms-status-pill').textContent = `${parseInt(num, 10)} Créditos`;
+          if ($('cfg-sms-credits-num')) $('cfg-sms-credits-num').textContent = `${num} Créditos`;
+          if (mostrarToast) toast(`🟢 SMS Masivos: ${num} créditos disponibles`);
+        }
+      } catch (e) {
+        console.warn('Credits error:', e);
+      }
     };
 
     window.toggleCampaign = async key => {
@@ -2707,23 +2771,63 @@
 
     window.ejecutarPruebaCampana = async () => {
       const tel = $('mtc-telefono').value.trim();
-      if (!tel) { toast('⚠️ Ingresa un número de teléfono'); return; }
+      if (!tel) { toast('⚠️ Ingresa un número de teléfono a 10 dígitos'); return; }
       const key = S.testCampaignKey;
       const c = S.campaigns[key];
+      const canal = $('mtc-canal') ? $('mtc-canal').value : 'whatsapp';
+      const msg = $('mtc-preview').textContent.trim();
       const btn = $('btn-ejecutar-prueba');
-      btn.textContent = 'Enviando...';
+
+      btn.textContent = 'Enviando vía SMS Masivos...';
       btn.disabled = true;
 
-      setTimeout(async () => {
+      try {
+        const endpoint = window.location.origin.startsWith('http')
+          ? '/api/send-message'
+          : 'https://amar-show-center-crm.vercel.app/api/send-message';
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: tel,
+            message: msg,
+            channel: canal
+          })
+        });
+
+        const data = await res.json();
+        btn.textContent = '▶ Enviar Prueba Ahora';
+        btn.disabled = false;
+
+        if (data.success) {
+          $('mtc-status-feedback').innerHTML = `
+            <div style="padding:12px 14px;background:#ECFDF5;border:1px solid #10B981;border-radius:var(--radius-sm);color:#059669;font-size:12.5px;font-weight:700;margin-top:10px;">
+              ✅ ¡Mensaje enviado con éxito vía ${canal.toUpperCase()} a ${tel}!<br>
+              <span style="font-size:11px;font-weight:400;color:#047857;">ID Solicitud SMS Masivos: ${data.data?.request_id || data.data?.message_id || 'OK'} · Revisa tu teléfono.</span>
+            </div>
+          `;
+          toast(`✅ Mensaje enviado vía ${canal.toUpperCase()} a ${tel}`);
+          window.consultarCreditosSMS();
+        } else {
+          $('mtc-status-feedback').innerHTML = `
+            <div style="padding:12px 14px;background:#FEF2F2;border:1px solid #EF4444;border-radius:var(--radius-sm);color:#B91C1C;font-size:12.5px;font-weight:600;margin-top:10px;">
+              ❌ Error de envío: ${data.error || data.data?.message || 'Error desconocido'}<br>
+              <span style="font-size:11px;font-weight:400;color:#991B1B;">Verifica que el número tenga WhatsApp activo y cuente con 10 dígitos.</span>
+            </div>
+          `;
+          toast(`❌ Error: ${data.error || 'No se pudo enviar'}`);
+        }
+      } catch (err) {
         btn.textContent = '▶ Enviar Prueba Ahora';
         btn.disabled = false;
         $('mtc-status-feedback').innerHTML = `
-          <div style="padding:10px 14px;background:#ECFDF5;border:1px solid #10B981;border-radius:var(--radius-sm);color:#059669;font-size:12.5px;font-weight:700;margin-top:8px;">
-            ✅ ¡Mensaje de prueba enviado con éxito a ${tel}! Revisa tu WhatsApp o SMS.
+          <div style="padding:12px 14px;background:#FEF2F2;border:1px solid #EF4444;border-radius:var(--radius-sm);color:#B91C1C;font-size:12.5px;font-weight:600;margin-top:10px;">
+            ❌ Error de conexión: ${err.message}
           </div>
         `;
-        toast(`✅ Prueba de "${c.title}" enviada`);
-      }, 900);
+        toast('❌ Error de conexión con el servidor');
+      }
     };
 
     window.abrirModalNuevaCampanaMasiva = () => {
@@ -2759,15 +2863,32 @@
     });
 
     window.abrirModalConfigSMS = () => {
+      const creds = S.campaigns._sms_credentials || {};
+      if ($('cfg-sms-key')) $('cfg-sms-key').value = creds.api_key || '4272002b8a218faa777e3fd9b7aac07f40c40cfc';
+      if ($('cfg-wa-instance')) $('cfg-wa-instance').value = creds.instance_id || 'irbj0fq0-87gb-vgvo-slds-h09p35skot74';
       $('modal-config-sms').style.display = 'flex';
+      window.consultarCreditosSMS();
     };
 
     $('form-config-sms').addEventListener('submit', async e => {
       e.preventDefault();
-      const key = $('cfg-sms-key').value.trim();
-      const inst = $('cfg-wa-instance').value.trim();
-      toast('✅ Credenciales de SMS Masivos guardadas correctamente');
-      cerrarModal('modal-config-sms');
+      const apiKey = $('cfg-sms-key').value.trim();
+      const instanceId = $('cfg-wa-instance').value.trim();
+      S.campaigns._sms_credentials = { api_key: apiKey, instance_id: instanceId };
+
+      const { error } = await supabase.from('campaign_settings').upsert({
+        id: 1,
+        settings: S.campaigns,
+        updated_at: new Date().toISOString()
+      });
+
+      if (error) {
+        toast('❌ Error al guardar: ' + error.message);
+      } else {
+        toast('✅ Credenciales de SMS Masivos guardadas y sincronizadas');
+        window.consultarCreditosSMS();
+        cerrarModal('modal-config-sms');
+      }
     });
 
     // RENDERIZADO GLOBAL
