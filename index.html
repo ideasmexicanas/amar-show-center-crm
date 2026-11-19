@@ -976,7 +976,7 @@
       <section id="view-dashboard" class="view-content active">
         
         <!-- Fila Superior de Tarjetas Bento con Mini-Barras Píldora -->
-        <div class="bento-top-row">
+        <div class="bento-top-row" id="dashboard-bento-top-row">
           
           <!-- Card 1: WhatsApp -->
           <div class="bento-card">
@@ -1853,6 +1853,12 @@
       return c === f || c.includes(f);
     };
 
+    const matchFilterExact = (canal, target) => {
+      const c = String(canal || '').toLowerCase().trim();
+      const t = String(target || '').toLowerCase().trim();
+      return c === t || c.includes(t);
+    };
+
     window.filtrarCanal = (canal, btn) => {
       S.activeFilter = canal;
       document.querySelectorAll('.seg-pill-btn').forEach(b => {
@@ -1916,28 +1922,172 @@
 
     // 5. RENDERIZADO DEL DASHBOARD BENTO ALLINONE
     const renderDashboard = () => {
-      const waCount = S.prospectos.filter(p => p.canal_origen === 'whatsapp').length;
-      const igCount = S.prospectos.filter(p => p.canal_origen === 'instagram').length;
-      const fbCount = S.prospectos.filter(p => p.canal_origen === 'facebook').length;
-      
+      const waProspectos = S.prospectos.filter(p => matchFilterExact(p.canal_origen, 'whatsapp'));
+      const igProspectos = S.prospectos.filter(p => matchFilterExact(p.canal_origen, 'instagram'));
+      const fbProspectos = S.prospectos.filter(p => matchFilterExact(p.canal_origen, 'facebook'));
       const totalPax = S.reservaciones.reduce((acc, r) => acc + (r.personas || 0), 0);
 
-      $('kpi-wa-count').textContent = waCount.toLocaleString('es-MX');
-      $('kpi-ig-count').textContent = igCount.toLocaleString('es-MX');
-      $('kpi-fb-count').textContent = fbCount.toLocaleString('es-MX');
-      $('kpi-pozole-pax').textContent = totalPax.toLocaleString('es-MX');
+      const canalLabel = S.activeFilter === 'all' 
+        ? 'Omnicanal' 
+        : S.activeFilter === 'whatsapp' 
+          ? 'WhatsApp' 
+          : S.activeFilter === 'instagram' 
+            ? 'Instagram' 
+            : 'Facebook';
 
-      const llamadasAgendadas = S.citas.filter(c => c.estado === 'agendada').length || 4304;
-      $('kpi-llamadas-total').textContent = llamadasAgendadas.toLocaleString('es-MX');
+      // Llamadas filtradas por red social
+      const llamadasCanal = S.citas.filter(c => {
+        if (c.estado !== 'agendada') return false;
+        if (S.activeFilter === 'all') return true;
+        const p = S.prospectos.find(x => x.id === c.prospecto_id);
+        return matchFilter(p?.canal_origen || c.canal_origen);
+      });
+      $('kpi-llamadas-total').textContent = llamadasCanal.length.toLocaleString('es-MX');
 
       // Llamadas de hoy en hora Acapulco
       const todayStr = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
-      const callsToday = S.citas.filter(c => {
-        if (c.estado !== 'agendada') return false;
+      const callsToday = llamadasCanal.filter(c => {
         const cDate = new Date(c.inicio).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year:'numeric', month:'2-digit', day:'2-digit' });
         return cDate === todayStr;
       });
-      $('kpi-llamadas-hoy').textContent = callsToday.length || 102;
+      $('kpi-llamadas-hoy').textContent = callsToday.length.toLocaleString('es-MX');
+
+      // Render Dinámico de las 4 Tarjetas Bento Superiores
+      const topRow = $('dashboard-bento-top-row');
+      if (topRow) {
+        if (S.activeFilter === 'all') {
+          topRow.innerHTML = `
+            <div class="bento-card" style="cursor:pointer;" onclick="window.filtrarCanal('whatsapp')">
+              <div class="bento-card-header">
+                <div class="channel-brand"><span class="channel-icon" style="background:#25D366;">💬</span><span>WhatsApp</span></div>
+                <span class="trend-pill up">Omnicanal</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${waProspectos.length}</div><div class="metric-caption">Prospectos activos</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:32px;background:#25D366;"></span><span class="mini-bar" style="height:18px;"></span></div>
+              </div>
+            </div>
+            <div class="bento-card" style="cursor:pointer;" onclick="window.filtrarCanal('instagram')">
+              <div class="bento-card-header">
+                <div class="channel-brand"><span class="channel-icon" style="background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);">📸</span><span>Instagram</span></div>
+                <span class="trend-pill up">Omnicanal</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${igProspectos.length}</div><div class="metric-caption">Interacciones</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:28px;background:#DD2A7B;"></span><span class="mini-bar" style="height:20px;"></span></div>
+              </div>
+            </div>
+            <div class="bento-card" style="cursor:pointer;" onclick="window.filtrarCanal('facebook')">
+              <div class="bento-card-header">
+                <div class="channel-brand"><span class="channel-icon" style="background:#1877F2;">📘</span><span>Facebook</span></div>
+                <span class="trend-pill up">Omnicanal</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${fbProspectos.length}</div><div class="metric-caption">Mensajes recibidos</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:36px;background:#1877F2;"></span><span class="mini-bar" style="height:22px;"></span></div>
+              </div>
+            </div>
+            <div class="bento-card" style="cursor:pointer;" onclick="window.cambiarVista('reservaciones')">
+              <div class="bento-card-header">
+                <div class="channel-brand"><span class="channel-icon" style="background:#D97706;">🍲</span><span>Jueves Pozolero</span></div>
+                <span class="trend-pill up">Restaurante</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${totalPax}</div><div class="metric-caption">Comensales registrados</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:38px;background:#D97706;"></span><span class="mini-bar" style="height:24px;"></span></div>
+              </div>
+            </div>
+          `;
+        } else {
+          const cfg = {
+            whatsapp: { name: 'WhatsApp', icon: '💬', color: '#25D366', bg: '#ECFDF5' },
+            instagram: { name: 'Instagram', icon: '📸', color: '#DD2A7B', bg: '#FDF2F8' },
+            facebook: { name: 'Facebook', icon: '📘', color: '#1877F2', bg: '#EEF5FF' }
+          }[S.activeFilter] || { name: S.activeFilter, icon: '⚡', color: 'var(--blue)', bg: '#EEF5FF' };
+
+          const fProspectos = S.prospectos.filter(p => matchFilter(p.canal_origen));
+          const fNuevos = fProspectos.filter(p => ['NUEVO', 'EN_CALIFICACION'].includes(p.estado_comercial));
+          const fCalificados = fProspectos.filter(p => ['CALIFICADO', 'COTIZACION_SOLICITADA', 'PROPUESTA_ENVIADA', 'EN_NEGOCIACION', 'GANADO'].includes(p.estado_comercial));
+          const fReservas = S.reservaciones.filter(r => matchFilter(r.canal_origen));
+          const fPax = fReservas.reduce((a, r) => a + (r.personas || 0), 0);
+
+          topRow.innerHTML = `
+            <div class="bento-card" style="box-shadow: 0 0 0 2.5px ${cfg.color};">
+              <div class="bento-card-header">
+                <div class="channel-brand"><span class="channel-icon" style="background:${cfg.color};">${cfg.icon}</span><span>${cfg.name} · Total</span></div>
+                <span class="trend-pill up" style="background:${cfg.bg};color:${cfg.color};">Filtrado</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${fProspectos.length}</div><div class="metric-caption">Prospectos de ${cfg.name}</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:36px;background:${cfg.color};"></span><span class="mini-bar active" style="height:24px;background:${cfg.color};"></span></div>
+              </div>
+            </div>
+            <div class="bento-card">
+              <div class="bento-card-header">
+                <span style="font-size:13px;font-weight:700;color:var(--muted);">En Calificación (${cfg.name})</span>
+                <span class="trend-pill up">Prospectos</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${fNuevos.length}</div><div class="metric-caption">Nuevos y en calificación</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:28px;background:var(--blue);"></span><span class="mini-bar" style="height:14px;"></span></div>
+              </div>
+            </div>
+            <div class="bento-card">
+              <div class="bento-card-header">
+                <span style="font-size:13px;font-weight:700;color:var(--muted);">Llamadas (${cfg.name})</span>
+                <span class="trend-pill up">Agenda</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${llamadasCanal.length}</div><div class="metric-caption">Llamadas agendadas</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:32px;background:var(--green);"></span><span class="mini-bar" style="height:20px;"></span></div>
+              </div>
+            </div>
+            <div class="bento-card">
+              <div class="bento-card-header">
+                <span style="font-size:13px;font-weight:700;color:var(--muted);">Restaurante (${cfg.name})</span>
+                <span class="trend-pill up">Pozole</span>
+              </div>
+              <div class="bento-card-body">
+                <div><div class="metric-number num">${fPax}</div><div class="metric-caption">${fReservas.length} mesas reservadas</div></div>
+                <div class="mini-bars-group"><span class="mini-bar active" style="height:34px;background:#D97706;"></span><span class="mini-bar" style="height:18px;"></span></div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Distribución Dinámica de Eventos (Donut)
+      const filteredEvents = S.prospectos.filter(p => matchFilter(p.canal_origen));
+      const totalEv = filteredEvents.length;
+      const bodas = filteredEvents.filter(p => (p.tipo_evento || '').toLowerCase().includes('boda')).length;
+      const xv = filteredEvents.filter(p => (p.tipo_evento || '').toLowerCase().includes('xv')).length;
+      const pozole = filteredEvents.filter(p => (p.tipo_evento || '').toLowerCase().includes('pozole')).length;
+      const otros = Math.max(0, totalEv - bodas - xv - pozole);
+
+      const pctCalificados = totalEv > 0 
+        ? Math.round((filteredEvents.filter(p => p.estado_comercial !== 'PERDIDO').length / totalEv) * 100) 
+        : 0;
+
+      const donutPctEl = document.querySelector('.donut-center-pct');
+      if (donutPctEl) donutPctEl.textContent = `${pctCalificados}%`;
+      const donutLabelEl = document.querySelector('.donut-center-label');
+      if (donutLabelEl) donutLabelEl.textContent = S.activeFilter === 'all' ? 'Calificados' : canalLabel;
+
+      const donutCircleEl = document.querySelector('.donut-container svg circle:nth-child(2)');
+      if (donutCircleEl) {
+        const offset = totalEv > 0 ? Math.round(364 - (364 * (pctCalificados / 100))) : 364;
+        donutCircleEl.setAttribute('stroke-dashoffset', String(offset));
+      }
+
+      const donutLegendEl = document.querySelector('.donut-legend');
+      if (donutLegendEl) {
+        donutLegendEl.innerHTML = `
+          <div class="legend-item"><span class="legend-dot" style="background:#1668E3;"></span> Bodas · ${bodas}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#60A5FA;"></span> XV Años · ${xv}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#D97706;"></span> Pozole · ${pozole}</div>
+          ${otros > 0 ? `<div class="legend-item"><span class="legend-dot" style="background:#10B981;"></span> Otros · ${otros}</div>` : ''}
+        `;
+      }
 
       // Feed reciente filtrado por red social
       const feedProspectos = S.prospectos.filter(p => matchFilter(p.canal_origen));
@@ -1966,10 +2116,16 @@
             `;
           }).join('');
         } else {
-          const canalTxt = S.activeFilter !== 'all' ? ` para ${S.activeFilter}` : '';
-          feedEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:12.5px;">No hay prospectos recientes${canalTxt}.</div>`;
+          feedEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:12.5px;">No hay prospectos recientes para ${canalLabel}.</div>`;
         }
       }
+
+      // Títulos dinámicos de sección
+      const feedHeaderTitle = document.querySelector('#view-dashboard .bento-mid-row > div:nth-child(3) .bento-card-header span:first-child');
+      if (feedHeaderTitle) feedHeaderTitle.textContent = `Recent Feed · ${canalLabel}`;
+
+      const trafficHeaderTitle = document.querySelector('#view-dashboard .bento-bottom-row .bento-card-header span:first-child');
+      if (trafficHeaderTitle) trafficHeaderTitle.textContent = `Tráfico de Prospectos · ${canalLabel}`;
 
       // Badge de atención
       const urgent = S.prospectos.filter(p => p.requiere_atencion || p.estado_comercial === 'PENDIENTE_DE_SEGUIMIENTO');
@@ -2055,6 +2211,10 @@
     };
 
     const renderKanban = () => {
+      const canalName = S.activeFilter === 'all' ? 'Todos los Canales' : S.activeFilter === 'whatsapp' ? 'WhatsApp' : S.activeFilter === 'instagram' ? 'Instagram' : 'Facebook';
+      const kanbanTitle = document.querySelector('#view-pipeline > div:first-child h2');
+      if (kanbanTitle) kanbanTitle.textContent = `Pipeline Comercial · Amar Show Center (${canalName})`;
+
       const filtered = S.prospectos.filter(p => matchFilter(p.canal_origen));
       ESTADOS.forEach(st => {
         const bodyEl = $(`k-body-${st.id}`);
@@ -2120,7 +2280,7 @@
 
     const renderReservaciones = () => {
       const container = $('reservaciones-allinone-container');
-      const filteredReservaciones = S.reservaciones.filter(r => matchFilter(r.canal_origen));
+      const filteredReservaciones = S.reservaciones.filter(r => matchFilter(r.canal_origen || r.redSocial));
 
       if (filteredReservaciones.length === 0) {
         const canalTxt = S.activeFilter !== 'all' ? ` para ${S.activeFilter === 'whatsapp' ? 'WhatsApp' : S.activeFilter === 'instagram' ? 'Instagram' : 'Facebook'}` : '';
